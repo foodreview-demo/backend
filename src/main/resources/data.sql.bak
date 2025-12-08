@@ -1,0 +1,140 @@
+-- 초기 데이터 삽입 스크립트
+-- 비밀번호는 모두 'password123' (BCrypt 해시)
+
+-- Users 삽입
+INSERT INTO users (id, email, password, name, avatar, region, taste_score, review_count, role, created_at, updated_at) VALUES
+(1, 'user1@foodreview.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3.qL8MF0wYd7.1BlZBYS', '맛탐험가', '/korean-food-lover-avatar.jpg', '서울 강남구', 2450, 156, 'USER', NOW(), NOW()),
+(2, 'user2@foodreview.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3.qL8MF0wYd7.1BlZBYS', '동네미식가', '/casual-food-reviewer-avatar.jpg', '서울 마포구', 1820, 98, 'USER', NOW(), NOW()),
+(3, 'user3@foodreview.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3.qL8MF0wYd7.1BlZBYS', '골목맛집헌터', '/street-food-explorer-avatar.jpg', '부산 해운대구', 1650, 87, 'USER', NOW(), NOW()),
+(4, 'user4@foodreview.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3.qL8MF0wYd7.1BlZBYS', '카페투어러', '/cafe-lover-avatar.jpg', '서울 성동구', 1420, 64, 'USER', NOW(), NOW()),
+(5, 'user5@foodreview.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3.qL8MF0wYd7.1BlZBYS', '야식킹', '/late-night-food-avatar.jpg', '서울 영등포구', 1280, 52, 'USER', NOW(), NOW()),
+(6, 'user6@foodreview.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3.qL8MF0wYd7.1BlZBYS', '베이킹마스터', '/baker-avatar.jpg', '서울 서초구', 1180, 45, 'USER', NOW(), NOW()),
+(7, 'user7@foodreview.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3.qL8MF0wYd7.1BlZBYS', '분식러버', '/korean-street-food-lover-avatar.jpg', '서울 동작구', 1050, 38, 'USER', NOW(), NOW()),
+(8, 'user8@foodreview.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3.qL8MF0wYd7.1BlZBYS', '일식덕후', '/japanese-food-lover-avatar.jpg', '서울 강남구', 980, 42, 'USER', NOW(), NOW()),
+(9, 'user9@foodreview.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3.qL8MF0wYd7.1BlZBYS', '짬뽕매니아', '/chinese-noodle-lover-avatar.jpg', '인천 중구', 920, 33, 'USER', NOW(), NOW()),
+(10, 'user10@foodreview.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3.qL8MF0wYd7.1BlZBYS', '디저트헌터', '/dessert-lover-avatar.jpg', '서울 강서구', 870, 29, 'USER', NOW(), NOW()),
+(11, 'user11@foodreview.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3.qL8MF0wYd7.1BlZBYS', '해장의신', '/hangover-food-expert-avatar.jpg', '대구 중구', 820, 27, 'USER', NOW(), NOW()),
+(12, 'user12@foodreview.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3.qL8MF0wYd7.1BlZBYS', '파스타장인', '/pasta-chef-avatar.jpg', '서울 용산구', 760, 24, 'USER', NOW(), NOW()),
+(13, 'user13@foodreview.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3.qL8MF0wYd7.1BlZBYS', '빵순이', '/bread-lover-girl-avatar.jpg', '대전 서구', 710, 21, 'USER', NOW(), NOW()),
+(14, 'user14@foodreview.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3.qL8MF0wYd7.1BlZBYS', '라멘오타쿠', '/ramen-lover-avatar.jpg', '서울 마포구', 650, 19, 'USER', NOW(), NOW()),
+(15, 'user15@foodreview.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3.qL8MF0wYd7.1BlZBYS', '떡볶이킹', '/tteokbokki-lover-avatar.jpg', '부산 서면', 580, 16, 'USER', NOW(), NOW());
+
+-- User Favorite Categories 삽입
+INSERT INTO user_favorite_categories (user_id, category) VALUES
+(1, '한식'), (1, '일식'), (1, '파스타'),
+(2, '중식'), (2, '한식'), (2, '베이커리'),
+(3, '해산물'), (3, '한식'), (3, '분식'),
+(4, '카페'), (4, '디저트'), (4, '베이커리'),
+(5, '치킨'), (5, '피자'), (5, '중식'),
+(6, '베이커리'), (6, '카페'), (6, '디저트'),
+(7, '분식'), (7, '한식'), (7, '중식'),
+(8, '일식'), (8, '양식'), (8, '카페'),
+(9, '중식'), (9, '한식'), (9, '분식'),
+(10, '카페'), (10, '베이커리'), (10, '양식'),
+(11, '한식'), (11, '분식'), (11, '중식'),
+(12, '양식'), (12, '일식'), (12, '카페'),
+(13, '베이커리'), (13, '카페'), (13, '분식'),
+(14, '일식'), (14, '중식'), (14, '한식'),
+(15, '분식'), (15, '한식'), (15, '중식');
+
+-- Restaurants 삽입
+INSERT INTO restaurants (id, name, category, address, region, thumbnail, average_rating, review_count, price_range, created_at, updated_at) VALUES
+(1, '할매순대국', 'KOREAN', '서울 강남구 역삼동 123-45', '서울 강남구', '/korean-sundae-soup-restaurant.jpg', 4.8, 234, '8,000원 ~ 12,000원', NOW(), NOW()),
+(2, '스시오마카세', 'JAPANESE', '서울 마포구 서교동 456-78', '서울 마포구', '/restaurant-japanese-1.png', 4.6, 0, '80,000원 ~ 150,000원', NOW(), NOW()),
+(3, '명동교자', 'KOREAN', '서울 중구 명동 789-12', '서울 중구', '/korean-dumpling-noodle-restaurant.jpg', 4.5, 567, '10,000원 ~ 15,000원', NOW(), NOW()),
+(4, '진진반점', 'CHINESE', '부산 해운대구 우동 234-56', '부산 해운대구', '/chinese-jjajangmyeon-restaurant.jpg', 4.3, 0, '7,000원 ~ 20,000원', NOW(), NOW()),
+(5, '파스타공방', 'WESTERN', '서울 성동구 성수동 567-89', '서울 성동구', '/italian-pasta-restaurant-seongsu.jpg', 4.7, 189, '15,000원 ~ 28,000원', NOW(), NOW()),
+(6, '진미평양냉면', 'KOREAN', '서울 마포구 연남동 234-12', '서울 마포구', '/korean-cold-noodle-naengmyeon-restaurant.jpg', 4.7, 312, '12,000원 ~ 16,000원', NOW(), NOW()),
+(7, '멘야하나비', 'JAPANESE', '서울 강남구 신사동 567-34', '서울 강남구', '/japanese-ramen-restaurant.png', 4.4, 189, '12,000원 ~ 18,000원', NOW(), NOW()),
+(8, '규카츠명가', 'JAPANESE', '서울 성동구 성수동 123-56', '서울 성동구', '/japanese-gyukatsu-beef-cutlet-restaurant.jpg', 4.5, 0, '18,000원 ~ 28,000원', NOW(), NOW()),
+(9, '홍보각', 'CHINESE', '인천 중구 차이나타운 45-12', '인천 중구', '/chinese-restaurant-jjamppong.jpg', 4.6, 423, '8,000원 ~ 25,000원', NOW(), NOW()),
+(10, '류샹', 'CHINESE', '서울 용산구 이태원동 234-78', '서울 용산구', '/authentic-sichuan-chinese-restaurant.jpg', 4.4, 156, '15,000원 ~ 40,000원', NOW(), NOW()),
+(11, '더스테이크하우스', 'WESTERN', '서울 강남구 청담동 456-23', '서울 강남구', '/premium-steakhouse-restaurant.jpg', 4.8, 278, '50,000원 ~ 120,000원', NOW(), NOW()),
+(12, '브런치카페라라', 'WESTERN', '서울 서초구 반포동 123-45', '서울 서초구', '/brunch-cafe-lala.jpg', 4.3, 0, '18,000원 ~ 32,000원', NOW(), NOW()),
+(13, '커피한약방', 'CAFE', '서울 종로구 익선동 12-34', '서울 종로구', '/hanok-cafe-ikseondong.jpg', 4.6, 345, '5,000원 ~ 9,000원', NOW(), NOW()),
+(14, '포레스트', 'CAFE', '서울 성동구 성수동 789-12', '서울 성동구', '/forest-cafe-seongsu.jpg', 4.5, 234, '6,000원 ~ 12,000원', NOW(), NOW()),
+(15, '루프탑커피', 'CAFE', '서울 용산구 한남동 456-78', '서울 용산구', '/rooftop-cafe-hannam.jpg', 4.4, 0, '7,000원 ~ 15,000원', NOW(), NOW()),
+(16, '밀도', 'BAKERY', '서울 강남구 도산대로 234-56', '서울 강남구', '/mildo-bakery-bread.jpg', 4.7, 456, '4,000원 ~ 15,000원', NOW(), NOW()),
+(17, '테일러커피앤베이커리', 'BAKERY', '서울 마포구 망원동 123-45', '서울 마포구', '/taylor-coffee-bakery.jpg', 4.5, 289, '3,500원 ~ 12,000원', NOW(), NOW()),
+(18, '르팡도레', 'BAKERY', '대전 서구 둔산동 567-89', '대전 서구', '/le-pain-dore-bakery.jpg', 4.6, 0, '4,500원 ~ 18,000원', NOW(), NOW()),
+(19, '신당동떡볶이', 'SNACK', '서울 중구 신당동 345-67', '서울 중구', '/sindang-tteokbokki.jpg', 4.4, 567, '4,000원 ~ 12,000원', NOW(), NOW()),
+(20, '마포원조김밥', 'SNACK', '서울 마포구 공덕동 234-56', '서울 마포구', '/mapo-kimbap.jpg', 4.3, 234, '3,000원 ~ 8,000원', NOW(), NOW()),
+(21, '부산어묵당', 'SNACK', '부산 서면 456-78', '부산 서면', '/busan-fish-cake.jpg', 4.5, 0, '5,000원 ~ 15,000원', NOW(), NOW());
+
+-- Reviews 삽입
+INSERT INTO reviews (id, user_id, restaurant_id, content, rating, menu, price, visit_date, sympathy_count, is_first_review, created_at, updated_at) VALUES
+(1, 1, 1, '40년 전통의 맛! 진한 국물에 순대도 신선하고 양도 푸짐합니다. 아침 출근 전에 먹기 딱 좋아요. 특히 막창이 들어간 모듬순대국 강추!', 5.0, '모듬순대국', '10,000원', '2024-12-01', 156, false, '2024-12-02 10:00:00', '2024-12-02 10:00:00'),
+(2, 2, 3, '손으로 빚은 만두가 정말 맛있어요. 칼국수 면발도 쫄깃하고 국물이 깔끔해서 자주 갑니다. 점심시간에는 웨이팅이 있으니 참고하세요!', 4.0, '만두칼국수', '12,000원', '2024-11-28', 89, false, '2024-11-30 12:00:00', '2024-11-30 12:00:00'),
+(3, 3, 5, '성수동에서 파스타 맛집 찾는다면 여기! 생면 파스타에 트러플 오일 향이 진하게 나요. 분위기도 좋아서 데이트 코스로 추천드립니다.', 5.0, '트러플 크림 파스타', '24,000원', '2024-12-03', 234, false, '2024-12-03 14:00:00', '2024-12-03 14:00:00'),
+(4, 8, 7, '진한 돈코츠 육수에 챠슈가 입에서 녹아요. 면 익힘도 선택 가능하고 무한리필 김치도 맛있습니다. 라멘 좋아하시는 분들 강추!', 5.0, '특제 돈코츠라멘', '14,000원', '2024-12-01', 78, false, '2024-12-02 11:00:00', '2024-12-02 11:00:00'),
+(5, 9, 9, '인천 차이나타운에서 짬뽕 맛집으로 유명한 곳! 얼큰한 국물에 해물이 푸짐하게 들어가요. 탕수육도 바삭바삭 찍먹파라면 여기!', 5.0, '삼선짬뽕', '12,000원', '2024-11-25', 145, false, '2024-11-26 13:00:00', '2024-11-26 13:00:00'),
+(6, 4, 13, '익선동 한옥 카페! 인테리어가 정말 예쁘고 시그니처 한방차가 독특해요. 사진 찍기 좋고 조용해서 대화하기도 좋습니다.', 4.0, '오미자차', '7,000원', '2024-11-30', 67, false, '2024-12-01 15:00:00', '2024-12-01 15:00:00'),
+(7, 6, 16, '식빵이 진짜 유명한 곳! 줄 서서 먹는 이유가 있어요. 갓 구운 식빵의 버터향이 정말 좋고 질감도 완벽합니다.', 5.0, '우유식빵', '8,000원', '2024-12-02', 198, false, '2024-12-03 09:00:00', '2024-12-03 09:00:00'),
+(8, 7, 19, '신당동 떡볶이 골목의 원조집! 쫄깃한 밀떡에 달달매콤한 양념이 중독적이에요. 튀김이랑 순대도 같이 드시면 완벽!', 5.0, '떡볶이 세트', '9,000원', '2024-11-28', 112, false, '2024-11-29 18:00:00', '2024-11-29 18:00:00'),
+(9, 12, 11, '드라이에이징 스테이크의 정점! 미디엄 레어로 구워주시는데 육즙이 장난 아니에요. 특별한 날 가기 딱 좋은 곳입니다.', 5.0, '드라이에이징 립아이', '85,000원', '2024-11-20', 89, false, '2024-11-21 19:00:00', '2024-11-21 19:00:00'),
+(10, 11, 6, '평양냉면 입문자에게 추천! 담백한 육수에 쫄깃한 면발이 일품이에요. 수육도 부드럽고 겨자는 살짝만 넣는 게 포인트!', 4.0, '물냉면', '14,000원', '2024-12-01', 56, false, '2024-12-02 12:30:00', '2024-12-02 12:30:00');
+
+-- Review Images 삽입
+INSERT INTO review_images (review_id, image_url) VALUES
+(1, '/korean-sundae-soup-delicious.jpg'),
+(2, '/korean-dumpling-kalguksu.jpg'),
+(3, '/truffle-pasta-italian.jpg'),
+(4, '/japanese-ramen-restaurant.png'),
+(5, '/chinese-restaurant-jjamppong.jpg'),
+(6, '/hanok-cafe-ikseondong.jpg'),
+(7, '/mildo-bakery-bread.jpg'),
+(8, '/sindang-tteokbokki.jpg'),
+(9, '/premium-steakhouse-restaurant.jpg'),
+(10, '/korean-cold-noodle-naengmyeon-restaurant.jpg');
+
+-- Sympathies 삽입 (몇 개의 공감 관계)
+INSERT INTO sympathies (id, user_id, review_id, created_at, updated_at) VALUES
+(1, 2, 1, NOW(), NOW()),
+(2, 3, 1, NOW(), NOW()),
+(3, 1, 2, NOW(), NOW()),
+(4, 4, 3, NOW(), NOW()),
+(5, 1, 5, NOW(), NOW()),
+(6, 2, 8, NOW(), NOW());
+
+-- Follows 삽입 (친구 관계)
+INSERT INTO follows (id, follower_id, following_id, created_at, updated_at) VALUES
+(1, 1, 2, NOW(), NOW()),
+(2, 1, 3, NOW(), NOW()),
+(3, 2, 1, NOW(), NOW()),
+(4, 3, 1, NOW(), NOW()),
+(5, 4, 1, NOW(), NOW()),
+(6, 5, 1, NOW(), NOW());
+
+-- Chat Rooms 삽입
+INSERT INTO chat_rooms (id, user1_id, user2_id, last_message, last_message_at, created_at, updated_at) VALUES
+(1, 1, 2, '마포구 신상 맛집 정보 공유해요!', '2024-12-03 14:30:00', NOW(), NOW()),
+(2, 1, 3, '부산 여행 가는데 추천 부탁드려요~', '2024-12-02 10:15:00', NOW(), NOW());
+
+-- Chat Messages 삽입
+INSERT INTO chat_messages (id, chat_room_id, sender_id, content, is_read, created_at, updated_at) VALUES
+(1, 1, 2, '안녕하세요! 마포구 맛집 리뷰 잘 봤어요', true, '2024-12-03 14:00:00', '2024-12-03 14:00:00'),
+(2, 1, 1, '감사합니다! 혹시 찾으시는 종류 있으세요?', true, '2024-12-03 14:10:00', '2024-12-03 14:10:00'),
+(3, 1, 2, '분위기 좋은 파스타집 추천해주세요!', true, '2024-12-03 14:20:00', '2024-12-03 14:20:00'),
+(4, 1, 2, '마포구 신상 맛집 정보 공유해요!', false, '2024-12-03 14:30:00', '2024-12-03 14:30:00'),
+(5, 2, 1, '부산 여행 가시는군요! 좋겠다~', true, '2024-12-02 09:00:00', '2024-12-02 09:00:00'),
+(6, 2, 3, '네! 해운대 쪽 맛집 추천해주세요', true, '2024-12-02 09:30:00', '2024-12-02 09:30:00'),
+(7, 2, 1, '부산 여행 가는데 추천 부탁드려요~', true, '2024-12-02 10:15:00', '2024-12-02 10:15:00');
+
+-- Score Events 삽입 (점수 획득 내역)
+INSERT INTO score_events (id, user_id, type, description, points, from_user_id, created_at, updated_at) VALUES
+(1, 1, 'REVIEW', '할매순대국 리뷰 작성', 50, NULL, '2024-12-02 10:00:00', '2024-12-02 10:00:00'),
+(2, 1, 'SYMPATHY_RECEIVED', '동네미식가님이 공감', 9, 2, '2024-12-02 11:00:00', '2024-12-02 11:00:00'),
+(3, 1, 'SYMPATHY_RECEIVED', '골목맛집헌터님이 공감', 8, 3, '2024-12-02 12:00:00', '2024-12-02 12:00:00'),
+(4, 2, 'REVIEW', '명동교자 리뷰 작성', 50, NULL, '2024-11-30 12:00:00', '2024-11-30 12:00:00'),
+(5, 2, 'SYMPATHY_RECEIVED', '맛탐험가님이 공감', 12, 1, '2024-11-30 13:00:00', '2024-11-30 13:00:00'),
+(6, 2, 'SYMPATHY_BONUS', '마스터 맛탐험가님의 공감 보너스', 25, 1, '2024-11-30 13:00:00', '2024-11-30 13:00:00');
+
+-- Auto increment 설정 (다음 삽입을 위해)
+ALTER TABLE users AUTO_INCREMENT = 100;
+ALTER TABLE restaurants AUTO_INCREMENT = 100;
+ALTER TABLE reviews AUTO_INCREMENT = 100;
+ALTER TABLE sympathies AUTO_INCREMENT = 100;
+ALTER TABLE follows AUTO_INCREMENT = 100;
+ALTER TABLE chat_rooms AUTO_INCREMENT = 100;
+ALTER TABLE chat_messages AUTO_INCREMENT = 100;
+ALTER TABLE score_events AUTO_INCREMENT = 100;
