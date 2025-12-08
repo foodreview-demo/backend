@@ -64,32 +64,41 @@ jobs:
 
       - name: Deploy on EC2
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
+          envs: DB_HOST,DB_NAME,DB_USERNAME,DB_PASSWORD,JWT_SECRET
+          command_timeout: 5m
           script: |
             cd /home/${{ secrets.EC2_USERNAME }}/food-review-backend
 
             # Stop existing application
             pkill -f 'java.*food-review' || true
-            sleep 5
+            sleep 2
 
             # Find the latest JAR file
             JAR_FILE=$(ls -t *.jar | head -1)
+            echo "Deploying $JAR_FILE"
 
-            # Start application with production profile
-            nohup java -jar \
-              -Dspring.profiles.active=prod \
-              -Dserver.port=8080 \
-              $JAR_FILE > app.log 2>&1 &
+            # Create env file
+            cat > app.env << ENVEOF
+            DB_HOST=$DB_HOST
+            DB_NAME=$DB_NAME
+            DB_USERNAME=$DB_USERNAME
+            DB_PASSWORD=$DB_PASSWORD
+            JWT_SECRET=$JWT_SECRET
+            ENVEOF
 
-            # Wait and check if app started
-            sleep 10
-            if pgrep -f 'java.*food-review' > /dev/null; then
-              echo "Application started successfully"
-            else
-              echo "Failed to start application"
-              tail -50 app.log
-              exit 1
-            fi
+            # Start application
+            export $(cat app.env | xargs)
+            nohup java -jar -Dspring.profiles.active=prod -Dserver.port=8080 $JAR_FILE > app.log 2>&1 &
+
+            sleep 3
+            echo "Deployment completed"
