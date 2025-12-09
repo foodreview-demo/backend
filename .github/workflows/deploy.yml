@@ -52,15 +52,22 @@ jobs:
           name: app-jar
           path: ./build/libs
 
+      - name: List downloaded artifacts
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Contents of ./build/libs:"
+          ls -la ./build/libs/ || echo "Directory not found"
+
       - name: Copy JAR to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "build/libs/*.jar"
+          source: "./build/libs/*.jar"
           target: "/home/${{ secrets.EC2_USERNAME }}/food-review-backend"
           strip_components: 2
+          debug: true
 
       - name: Deploy on EC2
         uses: appleboy/ssh-action@v1.0.3
@@ -78,6 +85,10 @@ jobs:
           command_timeout: 5m
           script: |
             cd /home/${{ secrets.EC2_USERNAME }}/food-review-backend
+
+            echo "Current directory: $(pwd)"
+            echo "Directory contents:"
+            ls -la
 
             pkill -f 'java.*food-review' || true
             sleep 2
