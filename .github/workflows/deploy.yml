@@ -91,8 +91,15 @@ jobs:
             ls -la
 
             echo "=== Stopping old process ==="
-            pkill -9 -f 'java.*SNAPSHOT.jar' 2>/dev/null || echo "No existing process"
-            sleep 3
+            if [ -f app.pid ]; then
+              OLD_PID=$(cat app.pid)
+              echo "Found PID file with: $OLD_PID"
+              kill $OLD_PID 2>/dev/null || echo "Process already stopped"
+              rm -f app.pid
+              sleep 3
+            else
+              echo "No PID file found"
+            fi
 
             echo "=== Finding JAR file ==="
             JAR_FILE=$(ls -t *SNAPSHOT.jar 2>/dev/null | grep -v plain | head -1)
@@ -109,17 +116,17 @@ jobs:
             source app.env
             export DB_HOST DB_NAME DB_USERNAME DB_PASSWORD JWT_SECRET
             nohup java -jar -Dspring.profiles.active=prod -Dserver.port=8080 "$JAR_FILE" > app.log 2>&1 &
+            echo $! > app.pid
             disown
 
             echo "=== Waiting for startup ==="
-            sleep 8
+            sleep 10
 
             echo "=== Checking process ==="
-            if pgrep -f "SNAPSHOT.jar" > /dev/null; then
-              echo "SUCCESS: Application is running"
-              ps aux | grep SNAPSHOT.jar | grep -v grep
+            if [ -f app.pid ] && kill -0 $(cat app.pid) 2>/dev/null; then
+              echo "SUCCESS: Application is running with PID $(cat app.pid)"
             else
               echo "FAILED: Check app.log"
-              cat app.log | tail -30
+              tail -50 app.log 2>/dev/null || echo "No log file"
               exit 1
             fi
