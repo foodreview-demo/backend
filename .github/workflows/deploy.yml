@@ -85,37 +85,46 @@ jobs:
           command_timeout: 5m
           script_stop: false
           script: |
+            set -e
             cd /home/${{ secrets.EC2_USERNAME }}/food-review-backend
 
-            echo "Current directory: $(pwd)"
-            echo "Directory contents:"
+            echo "=== Directory contents ==="
             ls -la
 
-            pkill -f 'java.*food-review' || true
-            sleep 2
-
-            JAR_FILE=$(ls -t *.jar 2>/dev/null | grep -v plain | head -1)
-            if [ -z "$JAR_FILE" ]; then
-              echo "Error: No JAR file found"
-              exit 1
+            echo "=== Stopping old process ==="
+            pid=$(pgrep -f 'java.*SNAPSHOT.jar' || echo "")
+            if [ -n "$pid" ]; then
+              echo "Killing process $pid"
+              kill $pid || true
+              sleep 3
             fi
-            echo "Deploying $JAR_FILE"
 
+            echo "=== Finding JAR file ==="
+            JAR_FILE=$(ls -t *SNAPSHOT.jar 2>/dev/null | grep -v plain | head -1)
+            echo "JAR file: $JAR_FILE"
+
+            echo "=== Creating env file ==="
             echo "DB_HOST=$DB_HOST" > app.env
             echo "DB_NAME=$DB_NAME" >> app.env
             echo "DB_USERNAME=$DB_USERNAME" >> app.env
             echo "DB_PASSWORD=$DB_PASSWORD" >> app.env
             echo "JWT_SECRET=$JWT_SECRET" >> app.env
 
-            export $(cat app.env | xargs)
+            echo "=== Starting application ==="
+            source app.env
+            export DB_HOST DB_NAME DB_USERNAME DB_PASSWORD JWT_SECRET
             nohup java -jar -Dspring.profiles.active=prod -Dserver.port=8080 "$JAR_FILE" > app.log 2>&1 &
+            disown
 
-            sleep 5
+            echo "=== Waiting for startup ==="
+            sleep 8
 
-            if pgrep -f "java.*jar" > /dev/null; then
-              echo "Application started successfully"
-              pgrep -f "java.*jar"
+            echo "=== Checking process ==="
+            if pgrep -f "SNAPSHOT.jar" > /dev/null; then
+              echo "SUCCESS: Application is running"
+              ps aux | grep SNAPSHOT.jar | grep -v grep
             else
-              echo "Warning: Application may not have started"
-              tail -20 app.log 2>/dev/null || true
+              echo "FAILED: Check app.log"
+              cat app.log | tail -30
+              exit 1
             fi
