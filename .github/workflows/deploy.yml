@@ -79,11 +79,9 @@ jobs:
           script: |
             cd /home/${{ secrets.EC2_USERNAME }}/food-review-backend
 
-            # Stop existing application
             pkill -f 'java.*food-review' || true
             sleep 2
 
-            # Find the latest JAR file
             JAR_FILE=$(ls -t *.jar 2>/dev/null | head -1)
             if [ -z "$JAR_FILE" ]; then
               echo "Error: No JAR file found"
@@ -91,36 +89,21 @@ jobs:
             fi
             echo "Deploying $JAR_FILE"
 
-            # Create startup script
-            cat > start.sh << 'SCRIPT'
-            #!/bin/bash
-            cd /home/$USER/food-review-backend
-            source app.env
-            export DB_HOST DB_NAME DB_USERNAME DB_PASSWORD JWT_SECRET
-            JAR=$(ls -t *.jar | head -1)
-            java -jar -Dspring.profiles.active=prod -Dserver.port=8080 $JAR >> app.log 2>&1
-            SCRIPT
-            chmod +x start.sh
+            echo "DB_HOST=$DB_HOST" > app.env
+            echo "DB_NAME=$DB_NAME" >> app.env
+            echo "DB_USERNAME=$DB_USERNAME" >> app.env
+            echo "DB_PASSWORD=$DB_PASSWORD" >> app.env
+            echo "JWT_SECRET=$JWT_SECRET" >> app.env
 
-            # Create env file (without leading spaces)
-            cat > app.env << ENVEOF
-DB_HOST=$DB_HOST
-DB_NAME=$DB_NAME
-DB_USERNAME=$DB_USERNAME
-DB_PASSWORD=$DB_PASSWORD
-JWT_SECRET=$JWT_SECRET
-ENVEOF
-
-            # Start application using nohup with explicit file redirection
-            nohup bash -c './start.sh' > /dev/null 2>&1 &
+            export $(cat app.env | xargs)
+            nohup java -jar -Dspring.profiles.active=prod -Dserver.port=8080 "$JAR_FILE" > app.log 2>&1 &
 
             sleep 5
 
-            # Check if process started
-            if pgrep -f 'java.*jar' > /dev/null; then
+            if pgrep -f "java.*jar" > /dev/null; then
               echo "Application started successfully"
-              echo "PID: $(pgrep -f 'java.*jar')"
+              pgrep -f "java.*jar"
             else
-              echo "Warning: Application may not have started. Check app.log for details"
-              tail -20 app.log || true
+              echo "Warning: Application may not have started"
+              tail -20 app.log 2>/dev/null || true
             fi
