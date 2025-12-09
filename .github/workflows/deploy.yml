@@ -77,11 +77,15 @@ jobs:
           DB_USERNAME: ${{ secrets.DB_USERNAME }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+          AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          envs: DB_HOST,DB_NAME,DB_USERNAME,DB_PASSWORD,JWT_SECRET
+          envs: DB_HOST,DB_NAME,DB_USERNAME,DB_PASSWORD,JWT_SECRET,AWS_S3_BUCKET,AWS_ACCESS_KEY,AWS_SECRET_KEY,AWS_REGION
           command_timeout: 5m
           script_stop: false
           script: |
@@ -111,10 +115,14 @@ jobs:
             echo "DB_USERNAME=$DB_USERNAME" >> app.env
             echo "DB_PASSWORD=$DB_PASSWORD" >> app.env
             echo "JWT_SECRET=$JWT_SECRET" >> app.env
+            echo "AWS_S3_BUCKET=$AWS_S3_BUCKET" >> app.env
+            echo "AWS_ACCESS_KEY=$AWS_ACCESS_KEY" >> app.env
+            echo "AWS_SECRET_KEY=$AWS_SECRET_KEY" >> app.env
+            echo "AWS_REGION=$AWS_REGION" >> app.env
 
             echo "=== Starting application ==="
             source app.env
-            export DB_HOST DB_NAME DB_USERNAME DB_PASSWORD JWT_SECRET
+            export DB_HOST DB_NAME DB_USERNAME DB_PASSWORD JWT_SECRET AWS_S3_BUCKET AWS_ACCESS_KEY AWS_SECRET_KEY AWS_REGION
             nohup java -jar -Dspring.profiles.active=prod -Dserver.port=8080 "$JAR_FILE" > app.log 2>&1 &
             echo $! > app.pid
             disown

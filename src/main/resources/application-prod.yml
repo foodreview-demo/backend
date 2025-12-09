@@ -52,3 +52,14 @@ logging:
     root: INFO
     com.foodreview: INFO
     org.hibernate.SQL: WARN
+
+# AWS S3 Configuration
+cloud:
+  aws:
+    s3:
+      bucket: ${AWS_S3_BUCKET}
+    region:
+      static: ${AWS_REGION:ap-northeast-2}
+    credentials:
+      access-key: ${AWS_ACCESS_KEY}
+      secret-key: ${AWS_SECRET_KEY}
