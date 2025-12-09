@@ -85,19 +85,14 @@ jobs:
           command_timeout: 5m
           script_stop: false
           script: |
-            set -e
             cd /home/${{ secrets.EC2_USERNAME }}/food-review-backend
 
             echo "=== Directory contents ==="
             ls -la
 
             echo "=== Stopping old process ==="
-            pid=$(pgrep -f 'java.*SNAPSHOT.jar' || echo "")
-            if [ -n "$pid" ]; then
-              echo "Killing process $pid"
-              kill $pid || true
-              sleep 3
-            fi
+            pkill -9 -f 'java.*SNAPSHOT.jar' 2>/dev/null || echo "No existing process"
+            sleep 3
 
             echo "=== Finding JAR file ==="
             JAR_FILE=$(ls -t *SNAPSHOT.jar 2>/dev/null | grep -v plain | head -1)
