@@ -83,7 +83,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           envs: DB_HOST,DB_NAME,DB_USERNAME,DB_PASSWORD,JWT_SECRET
           command_timeout: 5m
-          script_stop: true
+          script_stop: false
           script: |
             cd /home/${{ secrets.EC2_USERNAME }}/food-review-backend
 
