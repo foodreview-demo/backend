@@ -87,4 +87,20 @@ public class ChatDto {
     public static class WebSocketMessage {
         private String content;
     }
+
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class NewMessageNotification {
+        private String roomUuid;
+        private MessageResponse message;
+    }
+
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ReadNotification {
+        private String roomUuid;
+        private Long readByUserId;
+    }
 }

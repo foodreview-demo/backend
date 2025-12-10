@@ -161,6 +161,55 @@ public class ChatService {
         return ChatDto.MessageResponse.from(saved, userId);
     }
 
+    // 메시지 전송 (UUID 기반) - 상대방 ID도 함께 반환
+    @Transactional
+    public SendMessageResult sendMessageByUuidWithRecipient(Long userId, String roomUuid, String content) {
+        User sender = findUserById(userId);
+        ChatRoom room = findChatRoomByUuid(roomUuid);
+
+        // 채팅방 참여자인지 확인
+        validateChatRoomParticipant(room, userId);
+
+        ChatMessage message = ChatMessage.builder()
+                .chatRoom(room)
+                .sender(sender)
+                .content(content)
+                .build();
+
+        ChatMessage saved = chatMessageRepository.save(message);
+
+        // 채팅방 마지막 메시지 업데이트
+        room.updateLastMessage(content);
+
+        // 상대방 ID 조회
+        Long recipientId = room.getOtherUser(userId).getId();
+
+        return new SendMessageResult(ChatDto.MessageResponse.from(saved, userId), recipientId);
+    }
+
+    @lombok.Getter
+    @lombok.AllArgsConstructor
+    public static class SendMessageResult {
+        private ChatDto.MessageResponse messageResponse;
+        private Long recipientId;
+    }
+
+    // 메시지 읽음 처리 및 상대방 ID 반환 (WebSocket용)
+    @Transactional
+    public Long markMessagesAsReadAndGetOtherUser(Long userId, String roomUuid) {
+        User user = findUserById(userId);
+        ChatRoom room = findChatRoomByUuid(roomUuid);
+
+        // 채팅방 참여자인지 확인
+        validateChatRoomParticipant(room, userId);
+
+        // 메시지 읽음 처리
+        chatMessageRepository.markAllAsRead(room, user);
+
+        // 상대방 ID 반환
+        return room.getOtherUser(userId).getId();
+    }
+
     // UUID로 채팅방 정보 조회
     public ChatDto.RoomResponse getChatRoomByUuid(Long userId, String roomUuid) {
         User user = findUserById(userId);
