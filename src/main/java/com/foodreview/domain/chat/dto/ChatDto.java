@@ -80,4 +80,11 @@ public class ChatDto {
         @Size(max = 1000, message = "메시지는 1000자 이내로 작성해주세요")
         private String content;
     }
+
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class WebSocketMessage {
+        private String content;
+    }
 }
