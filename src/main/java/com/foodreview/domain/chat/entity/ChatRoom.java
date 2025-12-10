@@ -22,7 +22,7 @@ public class ChatRoom extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, updatable = false, length = 36)
+    @Column(unique = true, length = 36)
     private String uuid;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -41,6 +41,13 @@ public class ChatRoom extends BaseTimeEntity {
 
     @PrePersist
     public void generateUuid() {
+        if (this.uuid == null) {
+            this.uuid = UUID.randomUUID().toString();
+        }
+    }
+
+    // UUID가 없으면 생성 (기존 데이터 호환용)
+    public void ensureUuid() {
         if (this.uuid == null) {
             this.uuid = UUID.randomUUID().toString();
         }

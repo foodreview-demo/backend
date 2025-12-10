@@ -29,12 +29,15 @@ public class ChatService {
     private final UserRepository userRepository;
 
     // 채팅방 목록 조회
+    @Transactional
     public PageResponse<ChatDto.RoomResponse> getChatRooms(Long userId, Pageable pageable) {
         User user = findUserById(userId);
         Page<ChatRoom> rooms = chatRoomRepository.findByUser(user, pageable);
 
         List<ChatDto.RoomResponse> content = rooms.getContent().stream()
                 .map(room -> {
+                    // 기존 채팅방에 UUID가 없으면 생성
+                    room.ensureUuid();
                     long unreadCount = chatMessageRepository.countUnreadMessages(room, user);
                     return ChatDto.RoomResponse.from(room, user, unreadCount);
                 })
@@ -62,6 +65,9 @@ public class ChatService {
                     .build();
             return chatRoomRepository.save(newRoom);
         });
+
+        // 기존 채팅방에 UUID가 없으면 생성
+        room.ensureUuid();
 
         long unreadCount = chatMessageRepository.countUnreadMessages(room, user);
         return ChatDto.RoomResponse.from(room, user, unreadCount);
