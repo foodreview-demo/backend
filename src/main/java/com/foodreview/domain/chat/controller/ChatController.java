@@ -93,4 +93,13 @@ public class ChatController {
         ChatDto.MessageResponse response = chatService.sendMessageByUuid(userDetails.getUserId(), roomUuid, request.getContent());
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
     }
+
+    @Operation(summary = "채팅방 나가기 (UUID)")
+    @DeleteMapping("/room/{roomUuid}")
+    public ResponseEntity<ApiResponse<Void>> leaveChatRoom(
+            @CurrentUser CustomUserDetails userDetails,
+            @PathVariable String roomUuid) {
+        chatService.leaveChatRoom(userDetails.getUserId(), roomUuid);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
 }

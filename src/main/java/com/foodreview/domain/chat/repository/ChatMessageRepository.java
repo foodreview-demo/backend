@@ -23,4 +23,9 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
     @Modifying
     @Query("UPDATE ChatMessage m SET m.isRead = true WHERE m.chatRoom = :chatRoom AND m.sender != :user")
     void markAllAsRead(@Param("chatRoom") ChatRoom chatRoom, @Param("user") User user);
+
+    // 채팅방의 모든 메시지 삭제
+    @Modifying
+    @Query("DELETE FROM ChatMessage m WHERE m.chatRoom = :chatRoom")
+    void deleteByChatRoom(@Param("chatRoom") ChatRoom chatRoom);
 }
