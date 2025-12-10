@@ -32,13 +32,17 @@ public class ChatWebSocketController {
         log.info("WebSocket 메시지 수신: roomUuid={}, userId={}, content={}", roomUuid, userId, message.getContent());
 
         try {
-            // 메시지 저장
-            ChatDto.MessageResponse response = chatService.sendMessageByUuid(userId, roomUuid, message.getContent());
+            // 메시지 저장 및 상대방 ID 조회
+            ChatService.SendMessageResult result = chatService.sendMessageByUuidWithRecipient(userId, roomUuid, message.getContent());
 
             // 해당 채팅방을 구독 중인 모든 클라이언트에게 브로드캐스트
-            messagingTemplate.convertAndSend("/topic/chat/" + roomUuid, response);
+            messagingTemplate.convertAndSend("/topic/chat/" + roomUuid, result.getMessageResponse());
 
-            log.info("메시지 브로드캐스트 완료: roomUuid={}", roomUuid);
+            // 상대방에게 새 메시지 알림 전송 (채팅방 목록 갱신용)
+            messagingTemplate.convertAndSend("/topic/user/" + result.getRecipientId() + "/notification",
+                    new ChatDto.NewMessageNotification(roomUuid, result.getMessageResponse()));
+
+            log.info("메시지 브로드캐스트 완료: roomUuid={}, recipientId={}", roomUuid, result.getRecipientId());
         } catch (Exception e) {
             log.error("메시지 전송 실패: roomUuid={}, error={}", roomUuid, e.getMessage());
         }
