@@ -167,6 +167,21 @@ public class ChatService {
         return ChatDto.RoomResponse.from(room, user, unreadCount);
     }
 
+    // 채팅방 나가기 (UUID 기반)
+    @Transactional
+    public void leaveChatRoom(Long userId, String roomUuid) {
+        ChatRoom room = findChatRoomByUuid(roomUuid);
+
+        // 채팅방 참여자인지 확인
+        validateChatRoomParticipant(room, userId);
+
+        // 채팅방의 모든 메시지 삭제
+        chatMessageRepository.deleteByChatRoom(room);
+
+        // 채팅방 삭제
+        chatRoomRepository.delete(room);
+    }
+
     private void validateChatRoomParticipant(ChatRoom room, Long userId) {
         if (!room.getUser1().getId().equals(userId) && !room.getUser2().getId().equals(userId)) {
             throw new CustomException("채팅방에 접근 권한이 없습니다", HttpStatus.FORBIDDEN, "FORBIDDEN");
