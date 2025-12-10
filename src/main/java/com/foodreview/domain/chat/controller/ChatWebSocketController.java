@@ -47,4 +47,29 @@ public class ChatWebSocketController {
             log.error("메시지 전송 실패: roomUuid={}, error={}", roomUuid, e.getMessage());
         }
     }
+
+    /**
+     * 클라이언트가 /app/chat/{roomUuid}/read 로 읽음 알림을 보내면
+     * 상대방에게 읽음 상태 알림 전송
+     */
+    @MessageMapping("/chat/{roomUuid}/read")
+    public void markAsRead(
+            @DestinationVariable String roomUuid,
+            @Header("userId") Long userId) {
+
+        log.info("읽음 알림 수신: roomUuid={}, userId={}", roomUuid, userId);
+
+        try {
+            // 메시지 읽음 처리 및 상대방 ID 조회
+            Long otherUserId = chatService.markMessagesAsReadAndGetOtherUser(userId, roomUuid);
+
+            // 상대방에게 읽음 상태 알림 전송
+            messagingTemplate.convertAndSend("/topic/chat/" + roomUuid + "/read",
+                    new ChatDto.ReadNotification(roomUuid, userId));
+
+            log.info("읽음 알림 전송 완료: roomUuid={}, readByUserId={}", roomUuid, userId);
+        } catch (Exception e) {
+            log.error("읽음 알림 전송 실패: roomUuid={}, error={}", roomUuid, e.getMessage());
+        }
+    }
 }
