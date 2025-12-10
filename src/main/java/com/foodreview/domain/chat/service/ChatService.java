@@ -67,7 +67,7 @@ public class ChatService {
         return ChatDto.RoomResponse.from(room, user, unreadCount);
     }
 
-    // 채팅 메시지 조회
+    // 채팅 메시지 조회 (roomId 기반 - deprecated)
     @Transactional
     public PageResponse<ChatDto.MessageResponse> getMessages(Long userId, Long roomId, Pageable pageable) {
         User user = findUserById(userId);
@@ -88,7 +88,28 @@ public class ChatService {
         return PageResponse.from(messages, content);
     }
 
-    // 메시지 전송
+    // 채팅 메시지 조회 (UUID 기반)
+    @Transactional
+    public PageResponse<ChatDto.MessageResponse> getMessagesByUuid(Long userId, String roomUuid, Pageable pageable) {
+        User user = findUserById(userId);
+        ChatRoom room = findChatRoomByUuid(roomUuid);
+
+        // 채팅방 참여자인지 확인
+        validateChatRoomParticipant(room, userId);
+
+        // 메시지 읽음 처리
+        chatMessageRepository.markAllAsRead(room, user);
+
+        Page<ChatMessage> messages = chatMessageRepository.findByChatRoomOrderByCreatedAtAsc(room, pageable);
+
+        List<ChatDto.MessageResponse> content = messages.getContent().stream()
+                .map(msg -> ChatDto.MessageResponse.from(msg, userId))
+                .toList();
+
+        return PageResponse.from(messages, content);
+    }
+
+    // 메시지 전송 (roomId 기반 - deprecated)
     @Transactional
     public ChatDto.MessageResponse sendMessage(Long userId, Long roomId, String content) {
         User sender = findUserById(userId);
@@ -111,6 +132,41 @@ public class ChatService {
         return ChatDto.MessageResponse.from(saved, userId);
     }
 
+    // 메시지 전송 (UUID 기반)
+    @Transactional
+    public ChatDto.MessageResponse sendMessageByUuid(Long userId, String roomUuid, String content) {
+        User sender = findUserById(userId);
+        ChatRoom room = findChatRoomByUuid(roomUuid);
+
+        // 채팅방 참여자인지 확인
+        validateChatRoomParticipant(room, userId);
+
+        ChatMessage message = ChatMessage.builder()
+                .chatRoom(room)
+                .sender(sender)
+                .content(content)
+                .build();
+
+        ChatMessage saved = chatMessageRepository.save(message);
+
+        // 채팅방 마지막 메시지 업데이트
+        room.updateLastMessage(content);
+
+        return ChatDto.MessageResponse.from(saved, userId);
+    }
+
+    // UUID로 채팅방 정보 조회
+    public ChatDto.RoomResponse getChatRoomByUuid(Long userId, String roomUuid) {
+        User user = findUserById(userId);
+        ChatRoom room = findChatRoomByUuid(roomUuid);
+
+        // 채팅방 참여자인지 확인
+        validateChatRoomParticipant(room, userId);
+
+        long unreadCount = chatMessageRepository.countUnreadMessages(room, user);
+        return ChatDto.RoomResponse.from(room, user, unreadCount);
+    }
+
     private void validateChatRoomParticipant(ChatRoom room, Long userId) {
         if (!room.getUser1().getId().equals(userId) && !room.getUser2().getId().equals(userId)) {
             throw new CustomException("채팅방에 접근 권한이 없습니다", HttpStatus.FORBIDDEN, "FORBIDDEN");
@@ -124,6 +180,11 @@ public class ChatService {
 
     private ChatRoom findChatRoomById(Long roomId) {
         return chatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new CustomException("채팅방을 찾을 수 없습니다", HttpStatus.NOT_FOUND, "CHATROOM_NOT_FOUND"));
+    }
+
+    private ChatRoom findChatRoomByUuid(String uuid) {
+        return chatRoomRepository.findByUuid(uuid)
                 .orElseThrow(() -> new CustomException("채팅방을 찾을 수 없습니다", HttpStatus.NOT_FOUND, "CHATROOM_NOT_FOUND"));
     }
 }
