@@ -95,4 +95,12 @@ public class ChatDto {
         private String roomUuid;
         private MessageResponse message;
     }
+
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ReadNotification {
+        private String roomUuid;
+        private Long readByUserId;
+    }
 }

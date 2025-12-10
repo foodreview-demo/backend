@@ -194,6 +194,22 @@ public class ChatService {
         private Long recipientId;
     }
 
+    // 메시지 읽음 처리 및 상대방 ID 반환 (WebSocket용)
+    @Transactional
+    public Long markMessagesAsReadAndGetOtherUser(Long userId, String roomUuid) {
+        User user = findUserById(userId);
+        ChatRoom room = findChatRoomByUuid(roomUuid);
+
+        // 채팅방 참여자인지 확인
+        validateChatRoomParticipant(room, userId);
+
+        // 메시지 읽음 처리
+        chatMessageRepository.markAllAsRead(room, user);
+
+        // 상대방 ID 반환
+        return room.getOtherUser(userId).getId();
+    }
+
     // UUID로 채팅방 정보 조회
     public ChatDto.RoomResponse getChatRoomByUuid(Long userId, String roomUuid) {
         User user = findUserById(userId);
