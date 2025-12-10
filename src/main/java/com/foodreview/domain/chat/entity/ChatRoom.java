@@ -6,9 +6,12 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
-@Table(name = "chat_rooms")
+@Table(name = "chat_rooms", indexes = {
+    @Index(name = "idx_chat_room_uuid", columnList = "uuid", unique = true)
+})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -18,6 +21,9 @@ public class ChatRoom extends BaseTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(nullable = false, unique = true, updatable = false, length = 36)
+    private String uuid;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user1_id", nullable = false)
@@ -32,6 +38,13 @@ public class ChatRoom extends BaseTimeEntity {
 
     @Column(name = "last_message_at")
     private LocalDateTime lastMessageAt;
+
+    @PrePersist
+    public void generateUuid() {
+        if (this.uuid == null) {
+            this.uuid = UUID.randomUUID().toString();
+        }
+    }
 
     // 마지막 메시지 업데이트
     public void updateLastMessage(String message) {

@@ -18,6 +18,7 @@ public class ChatDto {
     @AllArgsConstructor
     public static class RoomResponse {
         private Long id;
+        private String uuid;
         private UserDto.SimpleResponse otherUser;
         private String lastMessage;
         private LocalDateTime lastMessageAt;
@@ -27,6 +28,7 @@ public class ChatDto {
             User otherUser = room.getOtherUser(currentUser.getId());
             return RoomResponse.builder()
                     .id(room.getId())
+                    .uuid(room.getUuid())
                     .otherUser(UserDto.SimpleResponse.from(otherUser))
                     .lastMessage(room.getLastMessage())
                     .lastMessageAt(room.getLastMessageAt())
