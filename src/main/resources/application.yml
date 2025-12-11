@@ -60,3 +60,10 @@ cloud:
     credentials:
       access-key: ${AWS_ACCESS_KEY:}
       secret-key: ${AWS_SECRET_KEY:}
+
+# Kakao OAuth Configuration
+oauth:
+  kakao:
+    client-id: ${KAKAO_CLIENT_ID:013f1f5f18776dadc308d781b0ffded5}
+    client-secret: ${KAKAO_CLIENT_SECRET:9rGMKniJgUdrNuB1EUOdAymDhwWv3Rti}
+    redirect-uri: ${KAKAO_REDIRECT_URI:http://localhost:3000/oauth/kakao/callback}

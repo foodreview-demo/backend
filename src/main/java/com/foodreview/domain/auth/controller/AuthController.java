@@ -1,7 +1,9 @@
 package com.foodreview.domain.auth.controller;
 
 import com.foodreview.domain.auth.dto.AuthDto;
+import com.foodreview.domain.auth.dto.KakaoOAuthDto;
 import com.foodreview.domain.auth.service.AuthService;
+import com.foodreview.domain.auth.service.KakaoOAuthService;
 import com.foodreview.domain.user.dto.UserDto;
 import com.foodreview.domain.user.service.UserService;
 import com.foodreview.global.common.ApiResponse;
@@ -23,6 +25,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final UserService userService;
+    private final KakaoOAuthService kakaoOAuthService;
 
     @Operation(summary = "회원가입")
     @PostMapping("/signup")
@@ -50,5 +53,12 @@ public class AuthController {
     public ResponseEntity<ApiResponse<UserDto.Response>> getMe(@CurrentUser CustomUserDetails userDetails) {
         UserDto.Response response = userService.getMyProfile(userDetails.getUserId());
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(summary = "카카오 로그인")
+    @PostMapping("/oauth/kakao")
+    public ResponseEntity<ApiResponse<AuthDto.TokenResponse>> kakaoLogin(@RequestBody KakaoOAuthDto.TokenRequest request) {
+        AuthDto.TokenResponse response = kakaoOAuthService.loginWithKakao(request.getCode());
+        return ResponseEntity.ok(ApiResponse.success(response, "카카오 로그인 성공"));
     }
 }

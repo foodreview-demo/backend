@@ -81,11 +81,14 @@ jobs:
           AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
           AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
+          KAKAO_CLIENT_ID: ${{ secrets.KAKAO_CLIENT_ID }}
+          KAKAO_CLIENT_SECRET: ${{ secrets.KAKAO_CLIENT_SECRET }}
+          KAKAO_REDIRECT_URI: ${{ secrets.KAKAO_REDIRECT_URI }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          envs: DB_HOST,DB_NAME,DB_USERNAME,DB_PASSWORD,JWT_SECRET,AWS_S3_BUCKET,AWS_ACCESS_KEY,AWS_SECRET_KEY,AWS_REGION
+          envs: DB_HOST,DB_NAME,DB_USERNAME,DB_PASSWORD,JWT_SECRET,AWS_S3_BUCKET,AWS_ACCESS_KEY,AWS_SECRET_KEY,AWS_REGION,KAKAO_CLIENT_ID,KAKAO_CLIENT_SECRET,KAKAO_REDIRECT_URI
           command_timeout: 5m
           script_stop: false
           script: |
@@ -119,10 +122,13 @@ jobs:
             echo "AWS_ACCESS_KEY=$AWS_ACCESS_KEY" >> app.env
             echo "AWS_SECRET_KEY=$AWS_SECRET_KEY" >> app.env
             echo "AWS_REGION=$AWS_REGION" >> app.env
+            echo "KAKAO_CLIENT_ID=$KAKAO_CLIENT_ID" >> app.env
+            echo "KAKAO_CLIENT_SECRET=$KAKAO_CLIENT_SECRET" >> app.env
+            echo "KAKAO_REDIRECT_URI=$KAKAO_REDIRECT_URI" >> app.env
 
             echo "=== Starting application ==="
             source app.env
-            export DB_HOST DB_NAME DB_USERNAME DB_PASSWORD JWT_SECRET AWS_S3_BUCKET AWS_ACCESS_KEY AWS_SECRET_KEY AWS_REGION
+            export DB_HOST DB_NAME DB_USERNAME DB_PASSWORD JWT_SECRET AWS_S3_BUCKET AWS_ACCESS_KEY AWS_SECRET_KEY AWS_REGION KAKAO_CLIENT_ID KAKAO_CLIENT_SECRET KAKAO_REDIRECT_URI
             nohup java -jar -Dspring.profiles.active=prod -Dserver.port=8080 "$JAR_FILE" > app.log 2>&1 &
             echo $! > app.pid
             disown
