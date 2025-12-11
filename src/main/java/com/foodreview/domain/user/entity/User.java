@@ -53,6 +53,13 @@ public class User extends BaseTimeEntity {
     @Builder.Default
     private Role role = Role.USER;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "provider")
+    private AuthProvider provider;
+
+    @Column(name = "provider_id")
+    private String providerId;
+
     // 점수 추가
     public void addScore(int points) {
         this.tasteScore += points;

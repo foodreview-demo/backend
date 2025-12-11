@@ -1,5 +1,6 @@
 package com.foodreview.domain.user.repository;
 
+import com.foodreview.domain.user.entity.AuthProvider;
 import com.foodreview.domain.user.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -13,6 +14,9 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByEmail(String email);
+
+    // OAuth provider로 사용자 조회
+    Optional<User> findByProviderAndProviderId(AuthProvider provider, String providerId);
 
     boolean existsByEmail(String email);
 
