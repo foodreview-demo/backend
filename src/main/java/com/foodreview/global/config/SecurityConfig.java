@@ -60,7 +60,9 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:3000",
                 "http://localhost:3001",
-                "http://food-review-frontend.s3-website.ap-northeast-2.amazonaws.com"
+                "http://food-review-frontend.s3-website.ap-northeast-2.amazonaws.com",
+                "http://43.201.74.67",
+                "http://43.201.74.67:3000"
         ));
 
         configuration.setAllowedMethods(Arrays.asList(
