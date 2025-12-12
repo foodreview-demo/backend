@@ -78,6 +78,18 @@ public class User extends BaseTimeEntity {
         if (favoriteCategories != null) this.favoriteCategories = favoriteCategories;
     }
 
+    // 카카오 계정 연동 (이름, 프로필 사진 동기화)
+    public void linkKakaoAccount(String providerId, String name, String avatar) {
+        this.provider = AuthProvider.KAKAO;
+        this.providerId = providerId;
+        if (name != null) {
+            this.name = name;
+        }
+        if (avatar != null) {
+            this.avatar = avatar;
+        }
+    }
+
     // 맛잘알 등급 계산
     public String getTasteGrade() {
         if (tasteScore >= 2000) return "마스터";

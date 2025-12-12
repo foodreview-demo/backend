@@ -85,12 +85,30 @@ public class KakaoOAuthService {
 
     private KakaoOAuthDto.UserInfoResponse getKakaoUserInfo(String accessToken) {
         try {
-            return webClient.get()
+            KakaoOAuthDto.UserInfoResponse response = webClient.get()
                     .uri(KAKAO_USER_INFO_URL)
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
                     .retrieve()
                     .bodyToMono(KakaoOAuthDto.UserInfoResponse.class)
                     .block();
+
+            // 디버그 로그
+            log.info("카카오 사용자 정보: id={}", response.getId());
+            if (response.getKakaoAccount() != null) {
+                KakaoOAuthDto.KakaoAccount account = response.getKakaoAccount();
+                log.info("카카오 계정: email={}", account.getEmail());
+                if (account.getProfile() != null) {
+                    log.info("카카오 프로필: nickname={}, profileImageUrl={}",
+                            account.getProfile().getNickname(),
+                            account.getProfile().getProfileImageUrl());
+                } else {
+                    log.warn("카카오 프로필이 null입니다");
+                }
+            } else {
+                log.warn("카카오 계정 정보가 null입니다");
+            }
+
+            return response;
         } catch (Exception e) {
             log.error("카카오 사용자 정보 요청 실패", e);
             throw new CustomException("카카오 사용자 정보를 가져오는데 실패했습니다", HttpStatus.UNAUTHORIZED, "KAKAO_USER_INFO_FAILED");
@@ -101,13 +119,6 @@ public class KakaoOAuthService {
         String kakaoId = String.valueOf(userInfo.getId());
         KakaoOAuthDto.KakaoAccount account = userInfo.getKakaoAccount();
 
-        // providerId로 기존 사용자 조회
-        Optional<User> existingUser = userRepository.findByProviderAndProviderId(AuthProvider.KAKAO, kakaoId);
-
-        if (existingUser.isPresent()) {
-            return existingUser.get();
-        }
-
         // 이메일, 이름, 아바타 추출 (account가 null일 수 있음)
         String email = null;
         String name = "사용자";
@@ -115,14 +126,6 @@ public class KakaoOAuthService {
 
         if (account != null) {
             email = account.getEmail();
-
-            // 이메일로 기존 회원 조회
-            if (email != null) {
-                Optional<User> userByEmail = userRepository.findByEmail(email);
-                if (userByEmail.isPresent()) {
-                    throw new CustomException("이미 가입된 이메일입니다. 기존 계정으로 로그인해주세요.", HttpStatus.CONFLICT, "EMAIL_ALREADY_EXISTS");
-                }
-            }
 
             // 프로필 정보 추출
             if (account.getProfile() != null) {
@@ -135,6 +138,25 @@ public class KakaoOAuthService {
             }
         }
 
+        // 1. providerId로 기존 카카오 연동 사용자 조회 (프로필 동기화 안함 - 최초 가입 시에만 적용)
+        Optional<User> existingKakaoUser = userRepository.findByProviderAndProviderId(AuthProvider.KAKAO, kakaoId);
+        if (existingKakaoUser.isPresent()) {
+            log.info("기존 카카오 연동 사용자 로그인: {}", existingKakaoUser.get().getEmail());
+            return existingKakaoUser.get();
+        }
+
+        // 2. 이메일로 기존 회원 조회 - 있으면 카카오 계정 연동 (이름, 프로필 사진 동기화)
+        if (email != null) {
+            Optional<User> existingUserByEmail = userRepository.findByEmail(email);
+            if (existingUserByEmail.isPresent()) {
+                User existingUser = existingUserByEmail.get();
+                existingUser.linkKakaoAccount(kakaoId, name, avatar);
+                log.info("기존 회원에 카카오 계정 연동 완료: {}", email);
+                return existingUser;
+            }
+        }
+
+        // 3. 신규 회원 - 자동 회원가입
         // 이메일이 없는 경우 임시 이메일 생성
         if (email == null) {
             email = "kakao_" + kakaoId + "@foodreview.local";
@@ -150,6 +172,7 @@ public class KakaoOAuthService {
                 .providerId(kakaoId)
                 .build();
 
+        log.info("카카오 신규 회원가입 완료: {}", email);
         return userRepository.save(newUser);
     }
 }
