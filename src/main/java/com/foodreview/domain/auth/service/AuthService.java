@@ -1,12 +1,14 @@
 package com.foodreview.domain.auth.service;
 
 import com.foodreview.domain.auth.dto.AuthDto;
+import com.foodreview.domain.auth.entity.RefreshToken;
 import com.foodreview.domain.user.dto.UserDto;
 import com.foodreview.domain.user.entity.User;
 import com.foodreview.domain.user.repository.UserRepository;
 import com.foodreview.global.exception.CustomException;
 import com.foodreview.global.security.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -14,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -23,6 +26,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthenticationManager authenticationManager;
+    private final RefreshTokenService refreshTokenService;
 
     @Transactional
     public UserDto.Response signUp(AuthDto.SignUpRequest request) {
@@ -44,15 +48,23 @@ public class AuthService {
         return UserDto.Response.from(savedUser, rank);
     }
 
-    public AuthDto.TokenResponse login(AuthDto.LoginRequest request) {
+    @Transactional
+    public AuthDto.TokenResponse login(AuthDto.LoginRequest request, String deviceId, String userAgent, String ipAddress) {
         // 인증 수행
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
 
-        // 토큰 생성
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new CustomException("사용자를 찾을 수 없습니다", HttpStatus.NOT_FOUND, "USER_NOT_FOUND"));
+
+        // Access Token 생성 (JWT)
         String accessToken = jwtTokenProvider.createAccessToken(request.getEmail());
-        String refreshToken = jwtTokenProvider.createRefreshToken(request.getEmail());
+
+        // Refresh Token 생성 및 DB 저장
+        String refreshToken = refreshTokenService.createRefreshToken(user, deviceId, userAgent, ipAddress);
+
+        log.info("User logged in: {}, device: {}", user.getEmail(), deviceId);
 
         return AuthDto.TokenResponse.builder()
                 .accessToken(accessToken)
@@ -61,25 +73,39 @@ public class AuthService {
                 .build();
     }
 
-    public AuthDto.TokenResponse refresh(AuthDto.RefreshRequest request) {
-        if (!jwtTokenProvider.validateToken(request.getRefreshToken())) {
-            throw new CustomException("유효하지 않은 리프레시 토큰입니다", HttpStatus.UNAUTHORIZED, "INVALID_TOKEN");
-        }
+    @Transactional
+    public AuthDto.TokenResponse refresh(AuthDto.RefreshRequest request, String deviceId, String userAgent, String ipAddress) {
+        // Refresh Token 검증 및 Rotation
+        RefreshToken newRefreshToken = refreshTokenService.validateAndRotate(
+                request.getRefreshToken(), deviceId, userAgent, ipAddress);
 
-        String email = jwtTokenProvider.getEmail(request.getRefreshToken());
+        User user = newRefreshToken.getUser();
 
-        // 사용자 존재 확인
-        if (!userRepository.existsByEmail(email)) {
-            throw new CustomException("사용자를 찾을 수 없습니다", HttpStatus.NOT_FOUND, "USER_NOT_FOUND");
-        }
+        // 새 Access Token 발급
+        String accessToken = jwtTokenProvider.createAccessToken(user.getEmail());
 
-        String accessToken = jwtTokenProvider.createAccessToken(email);
-        String refreshToken = jwtTokenProvider.createRefreshToken(email);
+        log.debug("Token refreshed for user: {}", user.getEmail());
 
         return AuthDto.TokenResponse.builder()
                 .accessToken(accessToken)
-                .refreshToken(refreshToken)
+                .refreshToken(newRefreshToken.getToken())
                 .expiresIn(jwtTokenProvider.getAccessTokenExpiration())
                 .build();
+    }
+
+    @Transactional
+    public void logout(String email, String refreshToken, boolean allDevices) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException("사용자를 찾을 수 없습니다", HttpStatus.NOT_FOUND, "USER_NOT_FOUND"));
+
+        if (allDevices) {
+            // 모든 기기에서 로그아웃
+            refreshTokenService.revokeAllUserTokens(user);
+            log.info("User logged out from all devices: {}", email);
+        } else {
+            // 현재 기기만 로그아웃
+            refreshTokenService.revokeToken(refreshToken);
+            log.info("User logged out from current device: {}", email);
+        }
     }
 }

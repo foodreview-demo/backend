@@ -54,7 +54,7 @@ logging:
 cloud:
   aws:
     s3:
-      bucket: ${AWS_S3_BUCKET:food-review-images}
+      bucket: ${AWS_S3_BUCKET:food-review-demo-images}
     region:
       static: ${AWS_REGION:ap-northeast-2}
     credentials:

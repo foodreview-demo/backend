@@ -55,4 +55,12 @@ public class AuthDto {
         @NotBlank(message = "리프레시 토큰은 필수입니다")
         private String refreshToken;
     }
+
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class LogoutRequest {
+        private String refreshToken;
+        private Boolean allDevices; // true면 모든 기기에서 로그아웃
+    }
 }

@@ -198,7 +198,7 @@ public class ReviewService {
 
     // 공감 추가
     @Transactional
-    public void addSympathy(Long userId, Long reviewId) {
+    public ReviewDto.SympathyResponse addSympathy(Long userId, Long reviewId) {
         User user = findUserById(userId);
         Review review = findReviewById(reviewId);
 
@@ -220,6 +220,9 @@ public class ReviewService {
 
         // 리뷰 작성자에게 점수 부여 (공감한 유저 점수의 0.5%)
         User reviewAuthor = review.getUser();
+
+        // 리뷰 작성자의 받은 공감 수 증가
+        reviewAuthor.incrementReceivedSympathyCount();
         int points = (int) (user.getTasteScore() * 0.005);
         if (points < 1) points = 1;
 
@@ -248,11 +251,17 @@ public class ReviewService {
                     .build();
             scoreEventRepository.save(bonusEvent);
         }
+
+        return ReviewDto.SympathyResponse.builder()
+                .reviewId(reviewId)
+                .sympathyCount(review.getSympathyCount())
+                .hasSympathized(true)
+                .build();
     }
 
     // 공감 취소
     @Transactional
-    public void removeSympathy(Long userId, Long reviewId) {
+    public ReviewDto.SympathyResponse removeSympathy(Long userId, Long reviewId) {
         User user = findUserById(userId);
         Review review = findReviewById(reviewId);
 
@@ -261,6 +270,15 @@ public class ReviewService {
 
         sympathyRepository.delete(sympathy);
         review.removeSympathy();
+
+        // 리뷰 작성자의 받은 공감 수 감소
+        review.getUser().decrementReceivedSympathyCount();
+
+        return ReviewDto.SympathyResponse.builder()
+                .reviewId(reviewId)
+                .sympathyCount(review.getSympathyCount())
+                .hasSympathized(false)
+                .build();
     }
 
     private Set<Long> getSympathizedReviewIds(Long userId) {

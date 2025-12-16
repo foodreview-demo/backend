@@ -17,6 +17,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @Tag(name = "Chat", description = "채팅 API")
 @RestController
 @RequestMapping("/api/chat")
@@ -101,5 +103,57 @@ public class ChatController {
             @PathVariable String roomUuid) {
         chatService.leaveChatRoom(userDetails.getUserId(), roomUuid);
         return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    // ===== 단체톡 API =====
+
+    @Operation(summary = "단체톡방 생성")
+    @PostMapping("/rooms/group")
+    public ResponseEntity<ApiResponse<ChatDto.RoomResponse>> createGroupChatRoom(
+            @CurrentUser CustomUserDetails userDetails,
+            @Valid @RequestBody ChatDto.CreateGroupRoomRequest request) {
+        ChatDto.RoomResponse response = chatService.createGroupChatRoom(
+                userDetails.getUserId(),
+                request.getName(),
+                request.getMemberIds()
+        );
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
+    }
+
+    @Operation(summary = "채팅방에 사용자 초대")
+    @PostMapping("/room/{roomUuid}/invite")
+    public ResponseEntity<ApiResponse<ChatDto.RoomResponse>> inviteToRoom(
+            @CurrentUser CustomUserDetails userDetails,
+            @PathVariable String roomUuid,
+            @Valid @RequestBody ChatDto.InviteRequest request) {
+        ChatDto.RoomResponse response = chatService.inviteToRoom(
+                userDetails.getUserId(),
+                roomUuid,
+                request.getUserIds()
+        );
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(summary = "채팅방 이름 변경")
+    @PatchMapping("/room/{roomUuid}/name")
+    public ResponseEntity<ApiResponse<ChatDto.RoomResponse>> updateRoomName(
+            @CurrentUser CustomUserDetails userDetails,
+            @PathVariable String roomUuid,
+            @Valid @RequestBody ChatDto.UpdateRoomNameRequest request) {
+        ChatDto.RoomResponse response = chatService.updateRoomName(
+                userDetails.getUserId(),
+                roomUuid,
+                request.getName()
+        );
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(summary = "채팅방 멤버 목록 조회")
+    @GetMapping("/room/{roomUuid}/members")
+    public ResponseEntity<ApiResponse<List<ChatDto.MemberResponse>>> getRoomMembers(
+            @CurrentUser CustomUserDetails userDetails,
+            @PathVariable String roomUuid) {
+        List<ChatDto.MemberResponse> response = chatService.getRoomMembers(userDetails.getUserId(), roomUuid);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 }

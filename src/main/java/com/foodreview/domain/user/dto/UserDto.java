@@ -18,6 +18,7 @@ public class UserDto {
         private Integer tasteScore;
         private String tasteGrade;
         private Integer reviewCount;
+        private Integer receivedSympathyCount;
         private List<String> favoriteCategories;
         private Integer rank;
 
@@ -30,6 +31,7 @@ public class UserDto {
                     .tasteScore(user.getTasteScore())
                     .tasteGrade(user.getTasteGrade())
                     .reviewCount(user.getReviewCount())
+                    .receivedSympathyCount(user.getReceivedSympathyCount())
                     .favoriteCategories(user.getFavoriteCategories())
                     .build();
         }
@@ -43,6 +45,7 @@ public class UserDto {
                     .tasteScore(user.getTasteScore())
                     .tasteGrade(user.getTasteGrade())
                     .reviewCount(user.getReviewCount())
+                    .receivedSympathyCount(user.getReceivedSympathyCount())
                     .favoriteCategories(user.getFavoriteCategories())
                     .rank(rank)
                     .build();

@@ -47,28 +47,6 @@ public class ReviewController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    @Operation(summary = "음식점 리뷰 조회")
-    @GetMapping("/restaurant/{restaurantId}")
-    public ResponseEntity<ApiResponse<PageResponse<ReviewDto.Response>>> getRestaurantReviews(
-            @PathVariable("restaurantId") Long restaurantId,
-            @CurrentUser CustomUserDetails userDetails,
-            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        Long userId = userDetails != null ? userDetails.getUserId() : null;
-        PageResponse<ReviewDto.Response> response = reviewService.getRestaurantReviews(restaurantId, userId, pageable);
-        return ResponseEntity.ok(ApiResponse.success(response));
-    }
-
-    @Operation(summary = "사용자 리뷰 조회")
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<ApiResponse<PageResponse<ReviewDto.Response>>> getUserReviews(
-            @PathVariable("userId") Long userId,
-            @CurrentUser CustomUserDetails userDetails,
-            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        Long currentUserId = userDetails != null ? userDetails.getUserId() : null;
-        PageResponse<ReviewDto.Response> response = reviewService.getUserReviews(userId, currentUserId, pageable);
-        return ResponseEntity.ok(ApiResponse.success(response));
-    }
-
     @Operation(summary = "리뷰 작성")
     @PostMapping
     public ResponseEntity<ApiResponse<ReviewDto.Response>> createReview(
@@ -98,20 +76,20 @@ public class ReviewController {
     }
 
     @Operation(summary = "리뷰 공감")
-    @PostMapping("/{reviewId}/sympathy")
-    public ResponseEntity<ApiResponse<Void>> addSympathy(
+    @PostMapping("/{reviewId}/sympathize")
+    public ResponseEntity<ApiResponse<ReviewDto.SympathyResponse>> addSympathy(
             @CurrentUser CustomUserDetails userDetails,
             @PathVariable("reviewId") Long reviewId) {
-        reviewService.addSympathy(userDetails.getUserId(), reviewId);
-        return ResponseEntity.ok(ApiResponse.success(null, "공감했습니다"));
+        ReviewDto.SympathyResponse response = reviewService.addSympathy(userDetails.getUserId(), reviewId);
+        return ResponseEntity.ok(ApiResponse.success(response, "공감했습니다"));
     }
 
     @Operation(summary = "리뷰 공감 취소")
-    @DeleteMapping("/{reviewId}/sympathy")
-    public ResponseEntity<ApiResponse<Void>> removeSympathy(
+    @DeleteMapping("/{reviewId}/sympathize")
+    public ResponseEntity<ApiResponse<ReviewDto.SympathyResponse>> removeSympathy(
             @CurrentUser CustomUserDetails userDetails,
             @PathVariable("reviewId") Long reviewId) {
-        reviewService.removeSympathy(userDetails.getUserId(), reviewId);
-        return ResponseEntity.ok(ApiResponse.success(null, "공감을 취소했습니다"));
+        ReviewDto.SympathyResponse response = reviewService.removeSympathy(userDetails.getUserId(), reviewId);
+        return ResponseEntity.ok(ApiResponse.success(response, "공감을 취소했습니다"));
     }
 }

@@ -28,6 +28,7 @@ public class KakaoOAuthService {
 
     private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
+    private final RefreshTokenService refreshTokenService;
     private final WebClient webClient = WebClient.create();
 
     @Value("${oauth.kakao.client-id}")
@@ -43,7 +44,7 @@ public class KakaoOAuthService {
     private static final String KAKAO_USER_INFO_URL = "https://kapi.kakao.com/v2/user/me";
 
     @Transactional
-    public AuthDto.TokenResponse loginWithKakao(String code) {
+    public AuthDto.TokenResponse loginWithKakao(String code, String deviceId, String userAgent, String ipAddress) {
         // 1. 카카오에서 access token 받기
         KakaoOAuthDto.TokenResponse kakaoToken = getKakaoToken(code);
 
@@ -55,7 +56,11 @@ public class KakaoOAuthService {
 
         // 4. JWT 토큰 발급
         String accessToken = jwtTokenProvider.createAccessToken(user.getEmail());
-        String refreshToken = jwtTokenProvider.createRefreshToken(user.getEmail());
+
+        // 5. Refresh Token 생성 및 DB 저장
+        String refreshToken = refreshTokenService.createRefreshToken(user, deviceId, userAgent, ipAddress);
+
+        log.info("카카오 로그인 완료: {}, device: {}", user.getEmail(), deviceId);
 
         return AuthDto.TokenResponse.builder()
                 .accessToken(accessToken)

@@ -9,17 +9,23 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface RestaurantRepository extends JpaRepository<Restaurant, Long> {
 
-    // 지역별 음식점 조회
-    Page<Restaurant> findByRegion(String region, Pageable pageable);
+    // 카카오 Place ID로 조회
+    Optional<Restaurant> findByKakaoPlaceId(String kakaoPlaceId);
+
+    // 지역별 음식점 조회 - "서울"이면 "서울 강남구" 등도 매칭
+    @Query("SELECT r FROM Restaurant r WHERE r.region LIKE :region%")
+    Page<Restaurant> findByRegion(@Param("region") String region, Pageable pageable);
 
     // 카테고리별 음식점 조회
     Page<Restaurant> findByCategory(Category category, Pageable pageable);
 
     // 지역 + 카테고리 필터
-    Page<Restaurant> findByRegionAndCategory(String region, Category category, Pageable pageable);
+    @Query("SELECT r FROM Restaurant r WHERE r.region LIKE :region% AND r.category = :category")
+    Page<Restaurant> findByRegionAndCategory(@Param("region") String region, @Param("category") Category category, Pageable pageable);
 
     // 검색 (이름, 주소, 메뉴 포함)
     @Query("SELECT r FROM Restaurant r WHERE " +
@@ -29,7 +35,7 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, Long> {
     // 검색 + 지역 필터
     @Query("SELECT r FROM Restaurant r WHERE " +
            "(r.name LIKE %:keyword% OR r.address LIKE %:keyword%) " +
-           "AND r.region = :region")
+           "AND r.region LIKE :region%")
     Page<Restaurant> searchByRegion(@Param("keyword") String keyword, @Param("region") String region, Pageable pageable);
 
     // 검색 + 카테고리 필터
@@ -41,7 +47,7 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, Long> {
     // 검색 + 지역 + 카테고리 필터
     @Query("SELECT r FROM Restaurant r WHERE " +
            "(r.name LIKE %:keyword% OR r.address LIKE %:keyword%) " +
-           "AND r.region = :region AND r.category = :category")
+           "AND r.region LIKE :region% AND r.category = :category")
     Page<Restaurant> searchByRegionAndCategory(
             @Param("keyword") String keyword,
             @Param("region") String region,

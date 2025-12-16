@@ -1,5 +1,7 @@
 package com.foodreview.domain.user.controller;
 
+import com.foodreview.domain.review.dto.ReviewDto;
+import com.foodreview.domain.review.service.ReviewService;
 import com.foodreview.domain.user.dto.ScoreEventDto;
 import com.foodreview.domain.user.dto.UserDto;
 import com.foodreview.domain.user.service.UserService;
@@ -7,7 +9,9 @@ import com.foodreview.global.common.ApiResponse;
 import com.foodreview.global.common.PageResponse;
 import com.foodreview.global.security.CurrentUser;
 import com.foodreview.global.security.CustomUserDetails;
+import com.foodreview.global.exception.CustomException;
 import io.swagger.v3.oas.annotations.Operation;
+import org.springframework.http.HttpStatus;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +19,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,11 +31,33 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
+    private final ReviewService reviewService;
+
+    @Operation(summary = "내 정보 조회")
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<UserDto.Response>> getMe(@CurrentUser CustomUserDetails userDetails) {
+        if (userDetails == null) {
+            throw new CustomException("인증되지 않은 사용자입니다", HttpStatus.UNAUTHORIZED, "UNAUTHORIZED");
+        }
+        UserDto.Response response = userService.getMyProfile(userDetails.getUserId());
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
 
     @Operation(summary = "사용자 정보 조회")
     @GetMapping("/{userId}")
     public ResponseEntity<ApiResponse<UserDto.Response>> getUser(@PathVariable Long userId) {
         UserDto.Response response = userService.getUser(userId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(summary = "사용자 리뷰 조회")
+    @GetMapping("/{userId}/reviews")
+    public ResponseEntity<ApiResponse<PageResponse<ReviewDto.Response>>> getUserReviews(
+            @PathVariable("userId") Long userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        Long currentUserId = userDetails != null ? userDetails.getUserId() : null;
+        PageResponse<ReviewDto.Response> response = reviewService.getUserReviews(userId, currentUserId, pageable);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
