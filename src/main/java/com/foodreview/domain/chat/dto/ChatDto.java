@@ -98,37 +98,59 @@ public class ChatDto {
         private Boolean isMine;
         private Integer readCount;   // 읽은 사람 수 (단체톡용, 본인 제외)
         private Integer memberCount; // 전체 멤버 수 (단체톡용, 본인 제외)
+        private String messageType;  // NORMAL or SYSTEM
 
         // 1:1 채팅용 (기존 호환)
         public static MessageResponse from(ChatMessage message, Long currentUserId) {
+            boolean isSystem = message.isSystemMessage();
             return MessageResponse.builder()
                     .id(message.getId())
-                    .senderId(message.getSender().getId())
-                    .senderName(message.getSender().getName())
-                    .senderAvatar(message.getSender().getAvatar())
+                    .senderId(isSystem ? null : message.getSender().getId())
+                    .senderName(isSystem ? null : message.getSender().getName())
+                    .senderAvatar(isSystem ? null : message.getSender().getAvatar())
                     .content(message.getContent())
                     .createdAt(message.getCreatedAt())
                     .isRead(message.getIsRead())
-                    .isMine(message.getSender().getId().equals(currentUserId))
+                    .isMine(isSystem ? false : message.getSender().getId().equals(currentUserId))
                     .readCount(null)
                     .memberCount(null)
+                    .messageType(message.getMessageType().name())
                     .build();
         }
 
         // 단체톡용 (읽음 수 포함)
         public static MessageResponse fromWithReadCount(ChatMessage message, Long currentUserId, int readCount, int memberCount) {
-            boolean isMine = message.getSender().getId().equals(currentUserId);
+            boolean isSystem = message.isSystemMessage();
+            boolean isMine = !isSystem && message.getSender().getId().equals(currentUserId);
             return MessageResponse.builder()
                     .id(message.getId())
-                    .senderId(message.getSender().getId())
-                    .senderName(message.getSender().getName())
-                    .senderAvatar(message.getSender().getAvatar())
+                    .senderId(isSystem ? null : message.getSender().getId())
+                    .senderName(isSystem ? null : message.getSender().getName())
+                    .senderAvatar(isSystem ? null : message.getSender().getAvatar())
                     .content(message.getContent())
                     .createdAt(message.getCreatedAt())
                     .isRead(readCount > 0)  // 1명이라도 읽었으면 true
                     .isMine(isMine)
-                    .readCount(isMine ? readCount : null)  // 내 메시지만 읽음 수 표시
-                    .memberCount(isMine ? memberCount : null)
+                    .readCount(isSystem ? null : readCount)
+                    .memberCount(isSystem ? null : memberCount)
+                    .messageType(message.getMessageType().name())
+                    .build();
+        }
+
+        // 시스템 메시지용
+        public static MessageResponse fromSystem(ChatMessage message) {
+            return MessageResponse.builder()
+                    .id(message.getId())
+                    .senderId(null)
+                    .senderName(null)
+                    .senderAvatar(null)
+                    .content(message.getContent())
+                    .createdAt(message.getCreatedAt())
+                    .isRead(true)
+                    .isMine(false)
+                    .readCount(null)
+                    .memberCount(null)
+                    .messageType(ChatMessage.MessageType.SYSTEM.name())
                     .build();
         }
     }

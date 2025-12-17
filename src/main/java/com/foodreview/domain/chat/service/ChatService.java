@@ -343,6 +343,9 @@ public class ChatService {
             ChatRoomMember member = chatRoomMemberRepository.findByChatRoomAndUser(room, user)
                     .orElseThrow(() -> new CustomException("채팅방 멤버가 아닙니다", HttpStatus.BAD_REQUEST));
 
+            // 퇴장 시스템 메시지 생성
+            createSystemMessage(room, user.getName() + "님이 퇴장했습니다.");
+
             room.removeMember(member);
             chatRoomMemberRepository.delete(member);
 
@@ -355,16 +358,7 @@ public class ChatService {
                 ChatRoomMember newOwner = room.getMembers().stream()
                         .min((m1, m2) -> m1.getJoinedAt().compareTo(m2.getJoinedAt()))
                         .orElseThrow();
-                // 새 방장 설정을 위해 새 멤버 객체 생성
-                chatRoomMemberRepository.delete(newOwner);
-                ChatRoomMember updatedOwner = ChatRoomMember.builder()
-                        .chatRoom(room)
-                        .user(newOwner.getUser())
-                        .role(ChatRoomMember.MemberRole.OWNER)
-                        .lastReadAt(newOwner.getLastReadAt())
-                        .joinedAt(newOwner.getJoinedAt())
-                        .build();
-                chatRoomMemberRepository.save(updatedOwner);
+                newOwner.promoteToOwner();
             }
         }
     }
@@ -405,7 +399,9 @@ public class ChatService {
         chatRoomMemberRepository.save(ownerMember);
 
         // 멤버 추가
-        for (Long memberId : memberIds) {
+        StringBuilder memberNames = new StringBuilder();
+        for (int i = 0; i < memberIds.size(); i++) {
+            Long memberId = memberIds.get(i);
             User memberUser = findUserById(memberId);
             ChatRoomMember member = ChatRoomMember.builder()
                     .chatRoom(room)
@@ -414,7 +410,13 @@ public class ChatService {
                     .build();
             room.addMember(member);
             chatRoomMemberRepository.save(member);
+
+            if (i > 0) memberNames.append(", ");
+            memberNames.append(memberUser.getName());
         }
+
+        // 단체톡방 생성 시스템 메시지
+        createSystemMessage(room, owner.getName() + "님이 " + memberNames + "님을 초대하여 대화를 시작했습니다.");
 
         List<ChatRoomMember> members = chatRoomMemberRepository.findByChatRoom(room);
         return ChatDto.RoomResponse.fromGroup(room, members, 0L);
@@ -424,6 +426,7 @@ public class ChatService {
     @Transactional
     public ChatDto.RoomResponse inviteToRoom(Long userId, String roomUuid, List<Long> userIds) {
         ChatRoom room = findChatRoomByUuid(roomUuid);
+        User inviter = findUserById(userId);
 
         // 채팅방 참여자인지 확인
         validateChatRoomParticipant(room, userId);
@@ -431,6 +434,9 @@ public class ChatService {
         if (room.getRoomType() == ChatRoom.RoomType.DIRECT) {
             throw new CustomException("1:1 채팅방에는 초대할 수 없습니다", HttpStatus.BAD_REQUEST);
         }
+
+        StringBuilder invitedNames = new StringBuilder();
+        int inviteCount = 0;
 
         for (Long inviteUserId : userIds) {
             // 이미 멤버인지 확인
@@ -446,10 +452,19 @@ public class ChatService {
                     .build();
             room.addMember(member);
             chatRoomMemberRepository.save(member);
+
+            if (inviteCount > 0) invitedNames.append(", ");
+            invitedNames.append(inviteUser.getName());
+            inviteCount++;
+        }
+
+        // 초대 시스템 메시지 생성
+        if (inviteCount > 0) {
+            createSystemMessage(room, inviter.getName() + "님이 " + invitedNames + "님을 초대했습니다.");
         }
 
         List<ChatRoomMember> members = chatRoomMemberRepository.findByChatRoom(room);
-        long unreadCount = chatMessageRepository.countUnreadMessages(room, findUserById(userId));
+        long unreadCount = chatMessageRepository.countUnreadMessages(room, inviter);
         return ChatDto.RoomResponse.fromGroup(room, members, unreadCount);
     }
 
@@ -524,5 +539,18 @@ public class ChatService {
     private ChatRoom findChatRoomByUuid(String uuid) {
         return chatRoomRepository.findByUuid(uuid)
                 .orElseThrow(() -> new CustomException("채팅방을 찾을 수 없습니다", HttpStatus.NOT_FOUND, "CHATROOM_NOT_FOUND"));
+    }
+
+    // 시스템 메시지 생성 (입장/퇴장/초대 등)
+    private void createSystemMessage(ChatRoom room, String content) {
+        ChatMessage message = ChatMessage.builder()
+                .chatRoom(room)
+                .sender(null)  // 시스템 메시지는 sender 없음
+                .content(content)
+                .messageType(ChatMessage.MessageType.SYSTEM)
+                .isRead(true)  // 시스템 메시지는 항상 읽음 처리
+                .build();
+        chatMessageRepository.save(message);
+        room.updateLastMessage(content);
     }
 }
