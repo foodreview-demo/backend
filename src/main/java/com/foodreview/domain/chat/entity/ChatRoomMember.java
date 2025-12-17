@@ -49,4 +49,8 @@ public class ChatRoomMember extends BaseTimeEntity {
     public void updateLastReadAt() {
         this.lastReadAt = LocalDateTime.now();
     }
+
+    public void promoteToOwner() {
+        this.role = MemberRole.OWNER;
+    }
 }
