@@ -83,6 +83,15 @@ public class RestaurantService {
 
     @Transactional
     public RestaurantDto.Response createRestaurant(RestaurantDto.CreateRequest request) {
+        // 카카오 Place ID가 있으면 중복 체크
+        if (request.getKakaoPlaceId() != null) {
+            var existing = restaurantRepository.findByKakaoPlaceId(request.getKakaoPlaceId());
+            if (existing.isPresent()) {
+                // 이미 등록된 음식점이면 해당 음식점 반환
+                return RestaurantDto.Response.from(existing.get());
+            }
+        }
+
         Restaurant.Category category = Restaurant.Category.valueOf(request.getCategory());
 
         Restaurant restaurant = Restaurant.builder()
@@ -94,10 +103,20 @@ public class RestaurantService {
                 .priceRange(request.getPriceRange())
                 .phone(request.getPhone())
                 .businessHours(request.getBusinessHours())
+                .kakaoPlaceId(request.getKakaoPlaceId())
+                .latitude(request.getLatitude())
+                .longitude(request.getLongitude())
                 .build();
 
         Restaurant saved = restaurantRepository.save(restaurant);
         return RestaurantDto.Response.from(saved);
+    }
+
+    // 카카오 Place ID로 음식점 조회
+    public RestaurantDto.Response getRestaurantByKakaoPlaceId(String kakaoPlaceId) {
+        return restaurantRepository.findByKakaoPlaceId(kakaoPlaceId)
+                .map(RestaurantDto.Response::from)
+                .orElse(null);
     }
 
     public Restaurant findRestaurantById(Long restaurantId) {

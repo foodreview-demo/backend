@@ -42,6 +42,10 @@ public class User extends BaseTimeEntity {
     @Builder.Default
     private Integer reviewCount = 0;
 
+    @Column(name = "received_sympathy_count", nullable = false)
+    @Builder.Default
+    private Integer receivedSympathyCount = 0;
+
     @ElementCollection
     @CollectionTable(name = "user_favorite_categories", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "category")
@@ -68,6 +72,18 @@ public class User extends BaseTimeEntity {
     // 리뷰 카운트 증가
     public void incrementReviewCount() {
         this.reviewCount++;
+    }
+
+    // 받은 공감 수 증가
+    public void incrementReceivedSympathyCount() {
+        this.receivedSympathyCount++;
+    }
+
+    // 받은 공감 수 감소
+    public void decrementReceivedSympathyCount() {
+        if (this.receivedSympathyCount > 0) {
+            this.receivedSympathyCount--;
+        }
     }
 
     // 프로필 업데이트

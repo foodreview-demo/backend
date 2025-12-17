@@ -51,6 +51,16 @@ public class Restaurant extends BaseTimeEntity {
     @Column(name = "business_hours", length = 200)
     private String businessHours;
 
+    // 카카오맵 연동 정보
+    @Column(name = "kakao_place_id", unique = true)
+    private String kakaoPlaceId;
+
+    @Column
+    private Double latitude;
+
+    @Column
+    private Double longitude;
+
     // 리뷰 추가 시 평점 업데이트
     public void addReview(BigDecimal newRating) {
         BigDecimal totalRating = this.averageRating.multiply(BigDecimal.valueOf(this.reviewCount));

@@ -1,17 +1,22 @@
 package com.foodreview.domain.restaurant.controller;
 
+import com.foodreview.domain.review.dto.ReviewDto;
+import com.foodreview.domain.review.service.ReviewService;
 import com.foodreview.domain.restaurant.dto.RestaurantDto;
 import com.foodreview.domain.restaurant.service.RestaurantService;
 import com.foodreview.global.common.ApiResponse;
 import com.foodreview.global.common.PageResponse;
+import com.foodreview.global.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Restaurant", description = "음식점 API")
@@ -21,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 public class RestaurantController {
 
     private final RestaurantService restaurantService;
+    private final ReviewService reviewService;
 
     @Operation(summary = "음식점 목록 조회")
     @GetMapping
@@ -36,6 +42,17 @@ public class RestaurantController {
     @GetMapping("/{restaurantId}")
     public ResponseEntity<ApiResponse<RestaurantDto.Response>> getRestaurant(@PathVariable Long restaurantId) {
         RestaurantDto.Response response = restaurantService.getRestaurant(restaurantId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(summary = "음식점 리뷰 목록 조회")
+    @GetMapping("/{restaurantId}/reviews")
+    public ResponseEntity<ApiResponse<PageResponse<ReviewDto.Response>>> getRestaurantReviews(
+            @PathVariable Long restaurantId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        Long currentUserId = userDetails != null ? userDetails.getUserId() : null;
+        PageResponse<ReviewDto.Response> response = reviewService.getRestaurantReviews(restaurantId, currentUserId, pageable);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

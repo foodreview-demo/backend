@@ -26,6 +26,9 @@ public class RestaurantDto {
         private String phone;
         private String businessHours;
         private Boolean isFirstReviewAvailable;
+        private String kakaoPlaceId;
+        private Double latitude;
+        private Double longitude;
 
         public static Response from(Restaurant restaurant) {
             return Response.builder()
@@ -42,6 +45,9 @@ public class RestaurantDto {
                     .phone(restaurant.getPhone())
                     .businessHours(restaurant.getBusinessHours())
                     .isFirstReviewAvailable(restaurant.isFirstReviewAvailable())
+                    .kakaoPlaceId(restaurant.getKakaoPlaceId())
+                    .latitude(restaurant.getLatitude())
+                    .longitude(restaurant.getLongitude())
                     .build();
         }
     }
@@ -95,5 +101,10 @@ public class RestaurantDto {
         private String priceRange;
         private String phone;
         private String businessHours;
+
+        // 카카오맵 연동 정보
+        private String kakaoPlaceId;
+        private Double latitude;
+        private Double longitude;
     }
 }

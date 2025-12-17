@@ -93,4 +93,13 @@ public class ReviewDto {
         private String price;
         private LocalDate visitDate;
     }
+
+    @Getter
+    @Builder
+    @AllArgsConstructor
+    public static class SympathyResponse {
+        private Long reviewId;
+        private Integer sympathyCount;
+        private Boolean hasSympathized;
+    }
 }
