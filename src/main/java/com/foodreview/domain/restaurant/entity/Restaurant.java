@@ -31,6 +31,12 @@ public class Restaurant extends BaseTimeEntity {
     @Column(nullable = false, length = 50)
     private String region;
 
+    @Column(length = 50)
+    private String district;
+
+    @Column(length = 50)
+    private String neighborhood;
+
     @Column(length = 500)
     private String thumbnail;
 

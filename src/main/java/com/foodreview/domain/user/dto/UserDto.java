@@ -15,6 +15,8 @@ public class UserDto {
         private String name;
         private String avatar;
         private String region;
+        private String district;
+        private String neighborhood;
         private Integer tasteScore;
         private String tasteGrade;
         private Integer reviewCount;
@@ -28,6 +30,8 @@ public class UserDto {
                     .name(user.getName())
                     .avatar(user.getAvatar())
                     .region(user.getRegion())
+                    .district(user.getDistrict())
+                    .neighborhood(user.getNeighborhood())
                     .tasteScore(user.getTasteScore())
                     .tasteGrade(user.getTasteGrade())
                     .reviewCount(user.getReviewCount())
@@ -42,6 +46,8 @@ public class UserDto {
                     .name(user.getName())
                     .avatar(user.getAvatar())
                     .region(user.getRegion())
+                    .district(user.getDistrict())
+                    .neighborhood(user.getNeighborhood())
                     .tasteScore(user.getTasteScore())
                     .tasteGrade(user.getTasteGrade())
                     .reviewCount(user.getReviewCount())
@@ -82,6 +88,8 @@ public class UserDto {
         private String name;
         private String avatar;
         private String region;
+        private String district;
+        private String neighborhood;
         private List<String> favoriteCategories;
     }
 

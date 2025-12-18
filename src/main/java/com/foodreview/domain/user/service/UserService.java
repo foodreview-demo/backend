@@ -47,6 +47,8 @@ public class UserService {
                 request.getName(),
                 request.getAvatar(),
                 request.getRegion(),
+                request.getDistrict(),
+                request.getNeighborhood(),
                 request.getFavoriteCategories()
         );
         Integer rank = userRepository.findRankByRegionAndScore(user.getRegion(), user.getTasteScore());

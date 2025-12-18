@@ -34,6 +34,12 @@ public class User extends BaseTimeEntity {
     @Column(nullable = false, length = 50)
     private String region;
 
+    @Column(length = 50)
+    private String district;
+
+    @Column(length = 50)
+    private String neighborhood;
+
     @Column(name = "taste_score", nullable = false)
     @Builder.Default
     private Integer tasteScore = 0;
@@ -87,10 +93,12 @@ public class User extends BaseTimeEntity {
     }
 
     // 프로필 업데이트
-    public void updateProfile(String name, String avatar, String region, List<String> favoriteCategories) {
+    public void updateProfile(String name, String avatar, String region, String district, String neighborhood, List<String> favoriteCategories) {
         if (name != null) this.name = name;
         if (avatar != null) this.avatar = avatar;
         if (region != null) this.region = region;
+        if (district != null) this.district = district;
+        if (neighborhood != null) this.neighborhood = neighborhood;
         if (favoriteCategories != null) this.favoriteCategories = favoriteCategories;
     }
 

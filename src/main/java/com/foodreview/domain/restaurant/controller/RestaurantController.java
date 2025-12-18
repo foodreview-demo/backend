@@ -32,9 +32,11 @@ public class RestaurantController {
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<RestaurantDto.SimpleResponse>>> getRestaurants(
             @RequestParam(required = false) String region,
+            @RequestParam(required = false) String district,
+            @RequestParam(required = false) String neighborhood,
             @RequestParam(required = false) String category,
             @PageableDefault(size = 20) Pageable pageable) {
-        PageResponse<RestaurantDto.SimpleResponse> response = restaurantService.getRestaurants(region, category, pageable);
+        PageResponse<RestaurantDto.SimpleResponse> response = restaurantService.getRestaurants(region, district, neighborhood, category, pageable);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
@@ -61,9 +63,11 @@ public class RestaurantController {
     public ResponseEntity<ApiResponse<PageResponse<RestaurantDto.SimpleResponse>>> searchRestaurants(
             @RequestParam String keyword,
             @RequestParam(required = false) String region,
+            @RequestParam(required = false) String district,
+            @RequestParam(required = false) String neighborhood,
             @RequestParam(required = false) String category,
             @PageableDefault(size = 20) Pageable pageable) {
-        PageResponse<RestaurantDto.SimpleResponse> response = restaurantService.searchRestaurants(keyword, region, category, pageable);
+        PageResponse<RestaurantDto.SimpleResponse> response = restaurantService.searchRestaurants(keyword, region, district, neighborhood, category, pageable);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

@@ -20,6 +20,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.dao.DataIntegrityViolationException;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -278,12 +280,17 @@ public class ChatService {
             List<ChatMessage> unreadMessages = chatMessageRepository.findUnreadMessagesByUser(room, user);
             ChatMessage lastMessage = null;
             for (ChatMessage msg : unreadMessages) {
-                if (!messageReadStatusRepository.existsByMessageAndUser(msg, user)) {
-                    MessageReadStatus readStatus = MessageReadStatus.builder()
-                            .message(msg)
-                            .user(user)
-                            .build();
-                    messageReadStatusRepository.save(readStatus);
+                try {
+                    if (!messageReadStatusRepository.existsByMessageAndUser(msg, user)) {
+                        MessageReadStatus readStatus = MessageReadStatus.builder()
+                                .message(msg)
+                                .user(user)
+                                .build();
+                        messageReadStatusRepository.save(readStatus);
+                        lastMessage = msg;
+                    }
+                } catch (DataIntegrityViolationException e) {
+                    // 동시성으로 인한 중복 삽입 시도 - 무시 (이미 읽음 처리됨)
                     lastMessage = msg;
                 }
             }

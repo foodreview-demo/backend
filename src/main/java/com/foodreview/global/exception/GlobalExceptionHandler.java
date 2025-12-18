@@ -5,6 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.InternalAuthenticationServiceException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -44,7 +46,29 @@ public class GlobalExceptionHandler {
         log.error("BadCredentialsException: {}", e.getMessage());
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
-                .body(ApiResponse.error("이메일 또는 비밀번호가 올바르지 않습니다", "AUTH_FAILED"));
+                .body(ApiResponse.error("비밀번호가 올바르지 않습니다", "INVALID_PASSWORD"));
+    }
+
+    @ExceptionHandler(UsernameNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUsernameNotFoundException(UsernameNotFoundException e) {
+        log.error("UsernameNotFoundException: {}", e.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error("존재하지 않는 이메일입니다", "USER_NOT_FOUND"));
+    }
+
+    @ExceptionHandler(InternalAuthenticationServiceException.class)
+    public ResponseEntity<ApiResponse<Void>> handleInternalAuthenticationServiceException(InternalAuthenticationServiceException e) {
+        log.error("InternalAuthenticationServiceException: {}", e.getMessage());
+        // UsernameNotFoundException이 InternalAuthenticationServiceException으로 래핑되는 경우
+        if (e.getCause() instanceof UsernameNotFoundException) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("존재하지 않는 이메일입니다", "USER_NOT_FOUND"));
+        }
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error("인증 처리 중 오류가 발생했습니다", "AUTH_ERROR"));
     }
 
     @ExceptionHandler(Exception.class)
