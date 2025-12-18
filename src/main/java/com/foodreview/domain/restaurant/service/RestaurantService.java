@@ -26,16 +26,29 @@ public class RestaurantService {
         return RestaurantDto.Response.from(restaurant);
     }
 
-    public PageResponse<RestaurantDto.SimpleResponse> getRestaurants(String region, String category, Pageable pageable) {
+    public PageResponse<RestaurantDto.SimpleResponse> getRestaurants(
+            String region, String district, String neighborhood, String category, Pageable pageable) {
         Page<Restaurant> restaurants;
 
-        if (region != null && category != null) {
-            Restaurant.Category cat = Restaurant.Category.valueOf(category);
-            restaurants = restaurantRepository.findByRegionAndCategory(region, cat, pageable);
+        Restaurant.Category cat = category != null ? Restaurant.Category.valueOf(category) : null;
+
+        if (region != null && cat != null) {
+            if (neighborhood != null) {
+                restaurants = restaurantRepository.findByRegionAndDistrictAndNeighborhoodAndCategory(region, district, neighborhood, cat, pageable);
+            } else if (district != null) {
+                restaurants = restaurantRepository.findByRegionAndDistrictAndCategory(region, district, cat, pageable);
+            } else {
+                restaurants = restaurantRepository.findByRegionAndCategory(region, cat, pageable);
+            }
         } else if (region != null) {
-            restaurants = restaurantRepository.findByRegion(region, pageable);
-        } else if (category != null) {
-            Restaurant.Category cat = Restaurant.Category.valueOf(category);
+            if (neighborhood != null) {
+                restaurants = restaurantRepository.findByRegionAndDistrictAndNeighborhood(region, district, neighborhood, pageable);
+            } else if (district != null) {
+                restaurants = restaurantRepository.findByRegionAndDistrict(region, district, pageable);
+            } else {
+                restaurants = restaurantRepository.findByRegion(region, pageable);
+            }
+        } else if (cat != null) {
             restaurants = restaurantRepository.findByCategory(cat, pageable);
         } else {
             restaurants = restaurantRepository.findAll(pageable);
@@ -49,17 +62,17 @@ public class RestaurantService {
     }
 
     public PageResponse<RestaurantDto.SimpleResponse> searchRestaurants(
-            String keyword, String region, String category, Pageable pageable) {
+            String keyword, String region, String district, String neighborhood, String category, Pageable pageable) {
 
         Page<Restaurant> restaurants;
 
-        if (region != null && category != null) {
-            Restaurant.Category cat = Restaurant.Category.valueOf(category);
-            restaurants = restaurantRepository.searchByRegionAndCategory(keyword, region, cat, pageable);
+        Restaurant.Category cat = category != null ? Restaurant.Category.valueOf(category) : null;
+
+        if (region != null && cat != null) {
+            restaurants = restaurantRepository.searchByLocationAndCategory(keyword, region, district, neighborhood, cat, pageable);
         } else if (region != null) {
-            restaurants = restaurantRepository.searchByRegion(keyword, region, pageable);
-        } else if (category != null) {
-            Restaurant.Category cat = Restaurant.Category.valueOf(category);
+            restaurants = restaurantRepository.searchByLocation(keyword, region, district, neighborhood, pageable);
+        } else if (cat != null) {
             restaurants = restaurantRepository.searchByCategory(keyword, cat, pageable);
         } else {
             restaurants = restaurantRepository.search(keyword, pageable);
@@ -99,6 +112,8 @@ public class RestaurantService {
                 .category(category)
                 .address(request.getAddress())
                 .region(request.getRegion())
+                .district(request.getDistrict())
+                .neighborhood(request.getNeighborhood())
                 .thumbnail(request.getThumbnail())
                 .priceRange(request.getPriceRange())
                 .phone(request.getPhone())

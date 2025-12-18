@@ -16,27 +16,44 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, Long> {
     // 카카오 Place ID로 조회
     Optional<Restaurant> findByKakaoPlaceId(String kakaoPlaceId);
 
-    // 지역별 음식점 조회 - "서울"이면 "서울 강남구" 등도 매칭
-    @Query("SELECT r FROM Restaurant r WHERE r.region LIKE :region%")
-    Page<Restaurant> findByRegion(@Param("region") String region, Pageable pageable);
+    // 지역별 음식점 조회 - 시/도 단위
+    Page<Restaurant> findByRegion(String region, Pageable pageable);
+
+    // 지역별 음식점 조회 - 구/군 단위
+    Page<Restaurant> findByRegionAndDistrict(String region, String district, Pageable pageable);
+
+    // 지역별 음식점 조회 - 동 단위
+    Page<Restaurant> findByRegionAndDistrictAndNeighborhood(String region, String district, String neighborhood, Pageable pageable);
 
     // 카테고리별 음식점 조회
     Page<Restaurant> findByCategory(Category category, Pageable pageable);
 
-    // 지역 + 카테고리 필터
-    @Query("SELECT r FROM Restaurant r WHERE r.region LIKE :region% AND r.category = :category")
-    Page<Restaurant> findByRegionAndCategory(@Param("region") String region, @Param("category") Category category, Pageable pageable);
+    // 지역 + 카테고리 필터 (시/도 단위)
+    Page<Restaurant> findByRegionAndCategory(String region, Category category, Pageable pageable);
 
-    // 검색 (이름, 주소, 메뉴 포함)
+    // 지역 + 카테고리 필터 (구/군 단위)
+    Page<Restaurant> findByRegionAndDistrictAndCategory(String region, String district, Category category, Pageable pageable);
+
+    // 지역 + 카테고리 필터 (동 단위)
+    Page<Restaurant> findByRegionAndDistrictAndNeighborhoodAndCategory(String region, String district, String neighborhood, Category category, Pageable pageable);
+
+    // 검색 (이름, 주소 포함)
     @Query("SELECT r FROM Restaurant r WHERE " +
            "r.name LIKE %:keyword% OR r.address LIKE %:keyword%")
     Page<Restaurant> search(@Param("keyword") String keyword, Pageable pageable);
 
-    // 검색 + 지역 필터
+    // 검색 + 지역 필터 (동적 쿼리)
     @Query("SELECT r FROM Restaurant r WHERE " +
            "(r.name LIKE %:keyword% OR r.address LIKE %:keyword%) " +
-           "AND r.region LIKE :region%")
-    Page<Restaurant> searchByRegion(@Param("keyword") String keyword, @Param("region") String region, Pageable pageable);
+           "AND r.region = :region " +
+           "AND (:district IS NULL OR r.district = :district) " +
+           "AND (:neighborhood IS NULL OR r.neighborhood = :neighborhood)")
+    Page<Restaurant> searchByLocation(
+            @Param("keyword") String keyword,
+            @Param("region") String region,
+            @Param("district") String district,
+            @Param("neighborhood") String neighborhood,
+            Pageable pageable);
 
     // 검색 + 카테고리 필터
     @Query("SELECT r FROM Restaurant r WHERE " +
@@ -44,13 +61,18 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, Long> {
            "AND r.category = :category")
     Page<Restaurant> searchByCategory(@Param("keyword") String keyword, @Param("category") Category category, Pageable pageable);
 
-    // 검색 + 지역 + 카테고리 필터
+    // 검색 + 지역 + 카테고리 필터 (동적 쿼리)
     @Query("SELECT r FROM Restaurant r WHERE " +
            "(r.name LIKE %:keyword% OR r.address LIKE %:keyword%) " +
-           "AND r.region LIKE :region% AND r.category = :category")
-    Page<Restaurant> searchByRegionAndCategory(
+           "AND r.region = :region " +
+           "AND (:district IS NULL OR r.district = :district) " +
+           "AND (:neighborhood IS NULL OR r.neighborhood = :neighborhood) " +
+           "AND r.category = :category")
+    Page<Restaurant> searchByLocationAndCategory(
             @Param("keyword") String keyword,
             @Param("region") String region,
+            @Param("district") String district,
+            @Param("neighborhood") String neighborhood,
             @Param("category") Category category,
             Pageable pageable);
 

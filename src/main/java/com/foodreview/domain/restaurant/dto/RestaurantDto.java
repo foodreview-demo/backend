@@ -19,6 +19,8 @@ public class RestaurantDto {
         private String categoryDisplay;
         private String address;
         private String region;
+        private String district;
+        private String neighborhood;
         private String thumbnail;
         private BigDecimal averageRating;
         private Integer reviewCount;
@@ -38,6 +40,8 @@ public class RestaurantDto {
                     .categoryDisplay(restaurant.getCategory().getDisplayName())
                     .address(restaurant.getAddress())
                     .region(restaurant.getRegion())
+                    .district(restaurant.getDistrict())
+                    .neighborhood(restaurant.getNeighborhood())
                     .thumbnail(restaurant.getThumbnail())
                     .averageRating(restaurant.getAverageRating())
                     .reviewCount(restaurant.getReviewCount())
@@ -62,6 +66,8 @@ public class RestaurantDto {
         private String categoryDisplay;
         private String address;
         private String region;
+        private String district;
+        private String neighborhood;
         private String thumbnail;
         private BigDecimal averageRating;
         private Integer reviewCount;
@@ -74,6 +80,8 @@ public class RestaurantDto {
                     .categoryDisplay(restaurant.getCategory().getDisplayName())
                     .address(restaurant.getAddress())
                     .region(restaurant.getRegion())
+                    .district(restaurant.getDistrict())
+                    .neighborhood(restaurant.getNeighborhood())
                     .thumbnail(restaurant.getThumbnail())
                     .averageRating(restaurant.getAverageRating())
                     .reviewCount(restaurant.getReviewCount())
@@ -96,6 +104,9 @@ public class RestaurantDto {
 
         @NotBlank(message = "지역은 필수입니다")
         private String region;
+
+        private String district;
+        private String neighborhood;
 
         private String thumbnail;
         private String priceRange;
