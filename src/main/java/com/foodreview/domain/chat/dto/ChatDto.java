@@ -111,7 +111,7 @@ public class ChatDto {
                     .content(message.getContent())
                     .createdAt(message.getCreatedAt())
                     .isRead(message.getIsRead())
-                    .isMine(isSystem ? false : message.getSender().getId().equals(currentUserId))
+                    .isMine(!isSystem && message.getSender().getId().equals(currentUserId))
                     .readCount(null)
                     .memberCount(null)
                     .messageType(message.getMessageType().name())
