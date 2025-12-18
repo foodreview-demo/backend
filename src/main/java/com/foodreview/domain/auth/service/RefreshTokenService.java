@@ -162,6 +162,6 @@ public class RefreshTokenService {
      * 보안성 높은 랜덤 토큰 생성
      */
     private String generateSecureToken() {
-        return UUID.randomUUID().toString() + "-" + UUID.randomUUID().toString();
+        return UUID.randomUUID() + "-" + UUID.randomUUID();
     }
 }
