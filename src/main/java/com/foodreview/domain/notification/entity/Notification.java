@@ -1,0 +1,52 @@
+package com.foodreview.domain.notification.entity;
+
+import com.foodreview.domain.common.BaseTimeEntity;
+import com.foodreview.domain.user.entity.User;
+import jakarta.persistence.*;
+import lombok.*;
+
+@Entity
+@Table(name = "notifications")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
+public class Notification extends BaseTimeEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;  // 알림을 받는 사용자
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "actor_id")
+    private User actor;  // 알림을 발생시킨 사용자
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private NotificationType type;
+
+    @Column(nullable = false, length = 500)
+    private String message;
+
+    @Column(name = "reference_id")
+    private Long referenceId;  // 관련 엔티티 ID (리뷰, 댓글 등)
+
+    @Column(name = "is_read", nullable = false)
+    @Builder.Default
+    private Boolean isRead = false;
+
+    public void markAsRead() {
+        this.isRead = true;
+    }
+
+    public enum NotificationType {
+        COMMENT,        // 내 리뷰에 댓글
+        REPLY,          // 내 댓글에 대댓글
+        SYMPATHY,       // 공감
+        FOLLOW          // 팔로우
+    }
+}
