@@ -23,6 +23,10 @@ public class RestaurantDto {
         private String neighborhood;
         private String thumbnail;
         private BigDecimal averageRating;
+        private BigDecimal averageTasteRating;
+        private BigDecimal averagePriceRating;
+        private BigDecimal averageAtmosphereRating;
+        private BigDecimal averageServiceRating;
         private Integer reviewCount;
         private String priceRange;
         private String phone;
@@ -44,6 +48,10 @@ public class RestaurantDto {
                     .neighborhood(restaurant.getNeighborhood())
                     .thumbnail(restaurant.getThumbnail())
                     .averageRating(restaurant.getAverageRating())
+                    .averageTasteRating(restaurant.getAverageTasteRating())
+                    .averagePriceRating(restaurant.getAveragePriceRating())
+                    .averageAtmosphereRating(restaurant.getAverageAtmosphereRating())
+                    .averageServiceRating(restaurant.getAverageServiceRating())
                     .reviewCount(restaurant.getReviewCount())
                     .priceRange(restaurant.getPriceRange())
                     .phone(restaurant.getPhone())

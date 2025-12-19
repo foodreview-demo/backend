@@ -1,5 +1,7 @@
 package com.foodreview.domain.review.service;
 
+import com.foodreview.domain.notification.entity.Notification;
+import com.foodreview.domain.notification.service.NotificationService;
 import com.foodreview.domain.review.dto.CommentDto;
 import com.foodreview.domain.review.entity.Comment;
 import com.foodreview.domain.review.entity.Review;
@@ -25,6 +27,7 @@ public class CommentService {
     private final CommentRepository commentRepository;
     private final ReviewRepository reviewRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     /**
      * 댓글 작성
@@ -62,6 +65,27 @@ public class CommentService {
 
         Comment savedComment = commentRepository.save(comment);
         log.debug("Comment created: reviewId={}, commentId={}, userId={}", reviewId, savedComment.getId(), user.getId());
+
+        // 알림 생성
+        if (parent != null) {
+            // 대댓글인 경우: 부모 댓글 작성자에게 알림
+            notificationService.createNotification(
+                    parent.getUser(),
+                    user,
+                    Notification.NotificationType.REPLY,
+                    String.format("%s님이 회원님의 댓글에 답글을 남겼습니다.", user.getName()),
+                    reviewId
+            );
+        } else {
+            // 일반 댓글인 경우: 리뷰 작성자에게 알림
+            notificationService.createNotification(
+                    review.getUser(),
+                    user,
+                    Notification.NotificationType.COMMENT,
+                    String.format("%s님이 회원님의 리뷰에 댓글을 남겼습니다.", user.getName()),
+                    reviewId
+            );
+        }
 
         return CommentDto.Response.from(savedComment, user.getId(), 0);
     }

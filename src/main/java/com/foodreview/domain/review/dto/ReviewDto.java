@@ -22,6 +22,10 @@ public class ReviewDto {
         private RestaurantDto.SimpleResponse restaurant;
         private String content;
         private BigDecimal rating;
+        private BigDecimal tasteRating;
+        private BigDecimal priceRating;
+        private BigDecimal atmosphereRating;
+        private BigDecimal serviceRating;
         private List<String> images;
         private String menu;
         private String price;
@@ -38,6 +42,10 @@ public class ReviewDto {
                     .restaurant(RestaurantDto.SimpleResponse.from(review.getRestaurant()))
                     .content(review.getContent())
                     .rating(review.getRating())
+                    .tasteRating(review.getTasteRating())
+                    .priceRating(review.getPriceRating())
+                    .atmosphereRating(review.getAtmosphereRating())
+                    .serviceRating(review.getServiceRating())
                     .images(review.getImages())
                     .menu(review.getMenu())
                     .price(review.getPrice())
@@ -66,6 +74,23 @@ public class ReviewDto {
         @DecimalMax(value = "5.0", message = "별점은 5점 이하여야 합니다")
         private BigDecimal rating;
 
+        // 세부 별점 (1-5, 선택 사항)
+        @DecimalMin(value = "1.0", message = "맛 별점은 1점 이상이어야 합니다")
+        @DecimalMax(value = "5.0", message = "맛 별점은 5점 이하여야 합니다")
+        private BigDecimal tasteRating;
+
+        @DecimalMin(value = "1.0", message = "가격 별점은 1점 이상이어야 합니다")
+        @DecimalMax(value = "5.0", message = "가격 별점은 5점 이하여야 합니다")
+        private BigDecimal priceRating;
+
+        @DecimalMin(value = "1.0", message = "분위기 별점은 1점 이상이어야 합니다")
+        @DecimalMax(value = "5.0", message = "분위기 별점은 5점 이하여야 합니다")
+        private BigDecimal atmosphereRating;
+
+        @DecimalMin(value = "1.0", message = "친절도 별점은 1점 이상이어야 합니다")
+        @DecimalMax(value = "5.0", message = "친절도 별점은 5점 이하여야 합니다")
+        private BigDecimal serviceRating;
+
         private List<String> images;
 
         @Size(max = 100, message = "메뉴명은 100자 이내로 작성해주세요")
@@ -87,6 +112,23 @@ public class ReviewDto {
         @DecimalMin(value = "1.0", message = "별점은 1점 이상이어야 합니다")
         @DecimalMax(value = "5.0", message = "별점은 5점 이하여야 합니다")
         private BigDecimal rating;
+
+        // 세부 별점 (1-5, 선택 사항)
+        @DecimalMin(value = "1.0", message = "맛 별점은 1점 이상이어야 합니다")
+        @DecimalMax(value = "5.0", message = "맛 별점은 5점 이하여야 합니다")
+        private BigDecimal tasteRating;
+
+        @DecimalMin(value = "1.0", message = "가격 별점은 1점 이상이어야 합니다")
+        @DecimalMax(value = "5.0", message = "가격 별점은 5점 이하여야 합니다")
+        private BigDecimal priceRating;
+
+        @DecimalMin(value = "1.0", message = "분위기 별점은 1점 이상이어야 합니다")
+        @DecimalMax(value = "5.0", message = "분위기 별점은 5점 이하여야 합니다")
+        private BigDecimal atmosphereRating;
+
+        @DecimalMin(value = "1.0", message = "친절도 별점은 1점 이상이어야 합니다")
+        @DecimalMax(value = "5.0", message = "친절도 별점은 5점 이하여야 합니다")
+        private BigDecimal serviceRating;
 
         private List<String> images;
         private String menu;

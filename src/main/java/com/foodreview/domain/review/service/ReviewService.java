@@ -1,5 +1,7 @@
 package com.foodreview.domain.review.service;
 
+import com.foodreview.domain.notification.entity.Notification;
+import com.foodreview.domain.notification.service.NotificationService;
 import com.foodreview.domain.restaurant.entity.Restaurant;
 import com.foodreview.domain.restaurant.repository.RestaurantRepository;
 import com.foodreview.domain.review.dto.ReviewDto;
@@ -34,6 +36,7 @@ public class ReviewService {
     private final UserRepository userRepository;
     private final SympathyRepository sympathyRepository;
     private final ScoreEventRepository scoreEventRepository;
+    private final NotificationService notificationService;
 
     private static final int FIRST_REVIEW_POINTS = 100;
     private static final int NORMAL_REVIEW_POINTS = 50;
@@ -119,6 +122,10 @@ public class ReviewService {
                 .restaurant(restaurant)
                 .content(request.getContent())
                 .rating(request.getRating())
+                .tasteRating(request.getTasteRating())
+                .priceRating(request.getPriceRating())
+                .atmosphereRating(request.getAtmosphereRating())
+                .serviceRating(request.getServiceRating())
                 .images(request.getImages() != null ? request.getImages() : List.of())
                 .menu(request.getMenu())
                 .price(request.getPrice())
@@ -130,6 +137,12 @@ public class ReviewService {
 
         // 음식점 평점 업데이트
         restaurant.addReview(request.getRating());
+        restaurant.addDetailRatings(
+                request.getTasteRating(),
+                request.getPriceRating(),
+                request.getAtmosphereRating(),
+                request.getServiceRating()
+        );
 
         // 점수 부여
         int points = isFirstReview ? FIRST_REVIEW_POINTS : NORMAL_REVIEW_POINTS;
@@ -172,6 +185,10 @@ public class ReviewService {
         review.update(
                 request.getContent(),
                 request.getRating(),
+                request.getTasteRating(),
+                request.getPriceRating(),
+                request.getAtmosphereRating(),
+                request.getServiceRating(),
                 request.getImages(),
                 request.getMenu(),
                 request.getPrice(),
@@ -192,6 +209,12 @@ public class ReviewService {
 
         // 음식점 평점 업데이트
         review.getRestaurant().removeReview(review.getRating());
+        review.getRestaurant().removeDetailRatings(
+                review.getTasteRating(),
+                review.getPriceRating(),
+                review.getAtmosphereRating(),
+                review.getServiceRating()
+        );
 
         reviewRepository.delete(review);
     }
@@ -251,6 +274,15 @@ public class ReviewService {
                     .build();
             scoreEventRepository.save(bonusEvent);
         }
+
+        // 공감 알림 생성
+        notificationService.createNotification(
+                reviewAuthor,
+                user,
+                Notification.NotificationType.SYMPATHY,
+                String.format("%s님이 회원님의 리뷰에 공감했습니다.", user.getName()),
+                review.getRestaurant().getId()
+        );
 
         return ReviewDto.SympathyResponse.builder()
                 .reviewId(reviewId)

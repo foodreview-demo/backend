@@ -37,6 +37,19 @@ public class Review extends BaseTimeEntity {
     @Column(nullable = false, precision = 2, scale = 1)
     private BigDecimal rating;
 
+    // 세부 별점
+    @Column(name = "taste_rating", precision = 2, scale = 1)
+    private BigDecimal tasteRating;
+
+    @Column(name = "price_rating", precision = 2, scale = 1)
+    private BigDecimal priceRating;
+
+    @Column(name = "atmosphere_rating", precision = 2, scale = 1)
+    private BigDecimal atmosphereRating;
+
+    @Column(name = "service_rating", precision = 2, scale = 1)
+    private BigDecimal serviceRating;
+
     @ElementCollection
     @CollectionTable(name = "review_images", joinColumns = @JoinColumn(name = "review_id"))
     @Column(name = "image_url", length = 500)
@@ -73,9 +86,15 @@ public class Review extends BaseTimeEntity {
     }
 
     // 리뷰 수정
-    public void update(String content, BigDecimal rating, List<String> images, String menu, String price, LocalDate visitDate) {
+    public void update(String content, BigDecimal rating, BigDecimal tasteRating, BigDecimal priceRating,
+                       BigDecimal atmosphereRating, BigDecimal serviceRating,
+                       List<String> images, String menu, String price, LocalDate visitDate) {
         if (content != null) this.content = content;
         if (rating != null) this.rating = rating;
+        if (tasteRating != null) this.tasteRating = tasteRating;
+        if (priceRating != null) this.priceRating = priceRating;
+        if (atmosphereRating != null) this.atmosphereRating = atmosphereRating;
+        if (serviceRating != null) this.serviceRating = serviceRating;
         if (images != null) this.images = images;
         if (menu != null) this.menu = menu;
         if (price != null) this.price = price;
