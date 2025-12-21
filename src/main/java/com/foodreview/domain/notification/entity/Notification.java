@@ -47,6 +47,7 @@ public class Notification extends BaseTimeEntity {
         COMMENT,        // 내 리뷰에 댓글
         REPLY,          // 내 댓글에 대댓글
         SYMPATHY,       // 공감
-        FOLLOW          // 팔로우
+        FOLLOW,         // 팔로우
+        INFLUENCE       // 내 리뷰가 참고됨
     }
 }

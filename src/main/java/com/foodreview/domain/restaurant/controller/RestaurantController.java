@@ -86,4 +86,12 @@ public class RestaurantController {
         RestaurantDto.Response response = restaurantService.createRestaurant(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response, "음식점이 등록되었습니다"));
     }
+
+    @Operation(summary = "카카오 Place ID로 음식점 조회")
+    @GetMapping("/kakao/{kakaoPlaceId}")
+    public ResponseEntity<ApiResponse<RestaurantDto.Response>> getRestaurantByKakaoPlaceId(
+            @PathVariable String kakaoPlaceId) {
+        RestaurantDto.Response response = restaurantService.getRestaurantByKakaoPlaceId(kakaoPlaceId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
 }

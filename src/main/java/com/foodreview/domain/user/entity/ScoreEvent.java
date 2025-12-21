@@ -39,6 +39,8 @@ public class ScoreEvent extends BaseTimeEntity {
         FIRST_REVIEW,      // 첫 리뷰 작성 (100점)
         REVIEW,            // 일반 리뷰 작성 (50점)
         SYMPATHY_RECEIVED, // 공감 받음 (상대방 점수의 0.5%)
-        SYMPATHY_BONUS     // 마스터 공감 보너스 (25점)
+        SYMPATHY_BONUS,    // 마스터 공감 보너스 (25점)
+        INFLUENCE,         // 리뷰 영향력 (내 리뷰가 참고됨, 5점)
+        INFLUENCE_FIRST_REVIEW // 첫 리뷰 영향력 (첫 리뷰가 참고됨, 10점)
     }
 }

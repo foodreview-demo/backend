@@ -34,8 +34,15 @@ public class ReviewDto {
         private Integer sympathyCount;
         private Boolean isFirstReview;
         private Boolean hasSympathized;
+        // 참고 정보
+        private ReferenceInfo referenceInfo;
+        private Integer referenceCount; // 이 리뷰를 참고한 횟수
 
         public static Response from(Review review, Boolean hasSympathized) {
+            return from(review, hasSympathized, null, 0);
+        }
+
+        public static Response from(Review review, Boolean hasSympathized, ReferenceInfo referenceInfo, Integer referenceCount) {
             return Response.builder()
                     .id(review.getId())
                     .user(UserDto.SimpleResponse.from(review.getUser()))
@@ -54,8 +61,35 @@ public class ReviewDto {
                     .sympathyCount(review.getSympathyCount())
                     .isFirstReview(review.getIsFirstReview())
                     .hasSympathized(hasSympathized)
+                    .referenceInfo(referenceInfo)
+                    .referenceCount(referenceCount)
                     .build();
         }
+    }
+
+    // 참고한 리뷰 정보
+    @Getter
+    @Builder
+    @AllArgsConstructor
+    public static class ReferenceInfo {
+        private Long reviewId;
+        private UserDto.SimpleResponse user;
+
+        public static ReferenceInfo from(Long reviewId, com.foodreview.domain.user.entity.User user) {
+            return ReferenceInfo.builder()
+                    .reviewId(reviewId)
+                    .user(UserDto.SimpleResponse.from(user))
+                    .build();
+        }
+    }
+
+    // 영향력 통계
+    @Getter
+    @Builder
+    @AllArgsConstructor
+    public static class InfluenceStats {
+        private Integer totalReferenceCount; // 내 리뷰가 참고된 총 횟수
+        private Integer totalInfluencePoints; // 영향력으로 받은 총 포인트
     }
 
     @Getter
@@ -100,6 +134,9 @@ public class ReviewDto {
         private String price;
 
         private LocalDate visitDate;
+
+        // 참고한 리뷰 ID (선택)
+        private Long referenceReviewId;
     }
 
     @Getter
