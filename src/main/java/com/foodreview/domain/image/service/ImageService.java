@@ -121,7 +121,7 @@ public class ImageService {
     }
 
     private String generateUniqueKey(String extension) {
-        return String.format("reviews/%s%s", UUID.randomUUID().toString(), extension);
+        return String.format("reviews/%s%s", UUID.randomUUID(), extension);
     }
 
     private String getFileExtension(String filename) {

@@ -132,4 +132,11 @@ public class UserController {
         List<UserDto.RecommendResponse> response = userService.getRecommendedFriends(userDetails.getUserId(), limit);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
+
+    @Operation(summary = "사용자 영향력 통계 조회")
+    @GetMapping("/{userId}/influence")
+    public ResponseEntity<ApiResponse<ReviewDto.InfluenceStats>> getInfluenceStats(@PathVariable Long userId) {
+        ReviewDto.InfluenceStats response = reviewService.getInfluenceStats(userId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
 }

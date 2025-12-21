@@ -1,10 +1,14 @@
 package com.foodreview.domain.review.service;
 
+import com.foodreview.domain.notification.entity.Notification;
+import com.foodreview.domain.notification.service.NotificationService;
 import com.foodreview.domain.restaurant.entity.Restaurant;
 import com.foodreview.domain.restaurant.repository.RestaurantRepository;
 import com.foodreview.domain.review.dto.ReviewDto;
 import com.foodreview.domain.review.entity.Review;
+import com.foodreview.domain.review.entity.ReviewReference;
 import com.foodreview.domain.review.entity.Sympathy;
+import com.foodreview.domain.review.repository.ReviewReferenceRepository;
 import com.foodreview.domain.review.repository.ReviewRepository;
 import com.foodreview.domain.review.repository.SympathyRepository;
 import com.foodreview.domain.user.entity.ScoreEvent;
@@ -22,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -34,18 +39,36 @@ public class ReviewService {
     private final UserRepository userRepository;
     private final SympathyRepository sympathyRepository;
     private final ScoreEventRepository scoreEventRepository;
+    private final ReviewReferenceRepository reviewReferenceRepository;
+    private final NotificationService notificationService;
 
     private static final int FIRST_REVIEW_POINTS = 100;
     private static final int NORMAL_REVIEW_POINTS = 50;
     private static final int MASTER_SYMPATHY_BONUS = 25;
     private static final int MASTER_SCORE_THRESHOLD = 2000;
+    private static final int INFLUENCE_POINTS = 5;
+    private static final int INFLUENCE_FIRST_REVIEW_POINTS = 10;
 
     // 리뷰 조회
     public ReviewDto.Response getReview(Long reviewId, Long currentUserId) {
         Review review = findReviewById(reviewId);
         boolean hasSympathized = currentUserId != null &&
                 sympathyRepository.existsByUserAndReview(findUserById(currentUserId), review);
-        return ReviewDto.Response.from(review, hasSympathized);
+
+        // 참고 정보 조회
+        ReviewDto.ReferenceInfo referenceInfo = null;
+        Optional<ReviewReference> reference = reviewReferenceRepository.findByReview(review);
+        if (reference.isPresent()) {
+            referenceInfo = ReviewDto.ReferenceInfo.from(
+                    reference.get().getReferenceReview().getId(),
+                    reference.get().getReferenceUser()
+            );
+        }
+
+        // 이 리뷰를 참고한 횟수
+        int referenceCount = reviewReferenceRepository.countByReferenceReview(review);
+
+        return ReviewDto.Response.from(review, hasSympathized, referenceInfo, referenceCount);
     }
 
     // 리뷰 목록 조회 (필터링)
@@ -67,7 +90,20 @@ public class ReviewService {
         Set<Long> sympathizedReviewIds = getSympathizedReviewIds(currentUserId);
 
         List<ReviewDto.Response> content = reviews.getContent().stream()
-                .map(review -> ReviewDto.Response.from(review, sympathizedReviewIds.contains(review.getId())))
+                .map(review -> {
+                    // 참고 정보 조회
+                    ReviewDto.ReferenceInfo referenceInfo = null;
+                    Optional<ReviewReference> reference = reviewReferenceRepository.findByReview(review);
+                    if (reference.isPresent()) {
+                        referenceInfo = ReviewDto.ReferenceInfo.from(
+                                reference.get().getReferenceReview().getId(),
+                                reference.get().getReferenceUser()
+                        );
+                    }
+                    // 이 리뷰를 참고한 횟수
+                    int referenceCount = reviewReferenceRepository.countByReferenceReview(review);
+                    return ReviewDto.Response.from(review, sympathizedReviewIds.contains(review.getId()), referenceInfo, referenceCount);
+                })
                 .toList();
 
         return PageResponse.from(reviews, content);
@@ -81,7 +117,20 @@ public class ReviewService {
         Set<Long> sympathizedReviewIds = getSympathizedReviewIds(currentUserId);
 
         List<ReviewDto.Response> content = reviews.getContent().stream()
-                .map(review -> ReviewDto.Response.from(review, sympathizedReviewIds.contains(review.getId())))
+                .map(review -> {
+                    // 참고 정보 조회
+                    ReviewDto.ReferenceInfo referenceInfo = null;
+                    Optional<ReviewReference> reference = reviewReferenceRepository.findByReview(review);
+                    if (reference.isPresent()) {
+                        referenceInfo = ReviewDto.ReferenceInfo.from(
+                                reference.get().getReferenceReview().getId(),
+                                reference.get().getReferenceUser()
+                        );
+                    }
+                    // 이 리뷰를 참고한 횟수
+                    int referenceCount = reviewReferenceRepository.countByReferenceReview(review);
+                    return ReviewDto.Response.from(review, sympathizedReviewIds.contains(review.getId()), referenceInfo, referenceCount);
+                })
                 .toList();
 
         return PageResponse.from(reviews, content);
@@ -95,7 +144,20 @@ public class ReviewService {
         Set<Long> sympathizedReviewIds = getSympathizedReviewIds(currentUserId);
 
         List<ReviewDto.Response> content = reviews.getContent().stream()
-                .map(review -> ReviewDto.Response.from(review, sympathizedReviewIds.contains(review.getId())))
+                .map(review -> {
+                    // 참고 정보 조회
+                    ReviewDto.ReferenceInfo referenceInfo = null;
+                    Optional<ReviewReference> reference = reviewReferenceRepository.findByReview(review);
+                    if (reference.isPresent()) {
+                        referenceInfo = ReviewDto.ReferenceInfo.from(
+                                reference.get().getReferenceReview().getId(),
+                                reference.get().getReferenceUser()
+                        );
+                    }
+                    // 이 리뷰를 참고한 횟수
+                    int referenceCount = reviewReferenceRepository.countByReferenceReview(review);
+                    return ReviewDto.Response.from(review, sympathizedReviewIds.contains(review.getId()), referenceInfo, referenceCount);
+                })
                 .toList();
 
         return PageResponse.from(reviews, content);
@@ -119,6 +181,10 @@ public class ReviewService {
                 .restaurant(restaurant)
                 .content(request.getContent())
                 .rating(request.getRating())
+                .tasteRating(request.getTasteRating())
+                .priceRating(request.getPriceRating())
+                .atmosphereRating(request.getAtmosphereRating())
+                .serviceRating(request.getServiceRating())
                 .images(request.getImages() != null ? request.getImages() : List.of())
                 .menu(request.getMenu())
                 .price(request.getPrice())
@@ -130,6 +196,12 @@ public class ReviewService {
 
         // 음식점 평점 업데이트
         restaurant.addReview(request.getRating());
+        restaurant.addDetailRatings(
+                request.getTasteRating(),
+                request.getPriceRating(),
+                request.getAtmosphereRating(),
+                request.getServiceRating()
+        );
 
         // 점수 부여
         int points = isFirstReview ? FIRST_REVIEW_POINTS : NORMAL_REVIEW_POINTS;
@@ -151,7 +223,70 @@ public class ReviewService {
                 .build();
         scoreEventRepository.save(event);
 
-        return ReviewDto.Response.from(savedReview, false);
+        // 참고 리뷰 처리
+        ReviewDto.ReferenceInfo referenceInfo = null;
+        if (request.getReferenceReviewId() != null) {
+            referenceInfo = processReferenceReview(savedReview, user, request.getReferenceReviewId());
+        }
+
+        return ReviewDto.Response.from(savedReview, false, referenceInfo, 0);
+    }
+
+    // 참고 리뷰 처리 (포인트 지급 및 기록)
+    private ReviewDto.ReferenceInfo processReferenceReview(Review review, User reviewer, Long referenceReviewId) {
+        Review referenceReview = findReviewById(referenceReviewId);
+        User referenceUser = referenceReview.getUser();
+
+        // 본인 리뷰 참고 불가
+        if (referenceUser.getId().equals(reviewer.getId())) {
+            return null;
+        }
+
+        // 상호 참고 체크 (어뷰징 방지): A→B 참고 후 B→A 참고 시 포인트 미지급
+        boolean isMutualReference = reviewReferenceRepository.existsMutualReference(reviewer, referenceUser);
+
+        // 포인트 계산
+        int influencePoints = 0;
+        if (!isMutualReference) {
+            influencePoints = referenceReview.getIsFirstReview() ? INFLUENCE_FIRST_REVIEW_POINTS : INFLUENCE_POINTS;
+            referenceUser.addScore(influencePoints);
+
+            // 점수 획득 이벤트 기록
+            ScoreEvent.ScoreEventType eventType = referenceReview.getIsFirstReview() ?
+                    ScoreEvent.ScoreEventType.INFLUENCE_FIRST_REVIEW : ScoreEvent.ScoreEventType.INFLUENCE;
+            String description = String.format("%s님이 내 리뷰를 참고하여 %s 리뷰 작성",
+                    reviewer.getName(), review.getRestaurant().getName());
+
+            ScoreEvent event = ScoreEvent.builder()
+                    .user(referenceUser)
+                    .type(eventType)
+                    .description(description)
+                    .points(influencePoints)
+                    .fromUser(reviewer)
+                    .build();
+
+            scoreEventRepository.save(event);
+
+            // 알림 생성
+            notificationService.createNotification(
+                    referenceUser,
+                    reviewer,
+                    Notification.NotificationType.INFLUENCE,
+                    String.format("%s님이 회원님의 리뷰를 참고하여 리뷰를 작성했습니다. (+%d점)", reviewer.getName(), influencePoints),
+                    referenceReview.getRestaurant().getId()
+            );
+        }
+
+        // 참고 기록 저장
+        ReviewReference reference = ReviewReference.builder()
+                .review(review)
+                .referenceReview(referenceReview)
+                .referenceUser(referenceUser)
+                .pointsAwarded(influencePoints)
+                .build();
+        reviewReferenceRepository.save(reference);
+
+        return ReviewDto.ReferenceInfo.from(referenceReviewId, referenceUser);
     }
 
     // 리뷰 수정
@@ -172,6 +307,10 @@ public class ReviewService {
         review.update(
                 request.getContent(),
                 request.getRating(),
+                request.getTasteRating(),
+                request.getPriceRating(),
+                request.getAtmosphereRating(),
+                request.getServiceRating(),
                 request.getImages(),
                 request.getMenu(),
                 request.getPrice(),
@@ -192,6 +331,12 @@ public class ReviewService {
 
         // 음식점 평점 업데이트
         review.getRestaurant().removeReview(review.getRating());
+        review.getRestaurant().removeDetailRatings(
+                review.getTasteRating(),
+                review.getPriceRating(),
+                review.getAtmosphereRating(),
+                review.getServiceRating()
+        );
 
         reviewRepository.delete(review);
     }
@@ -252,6 +397,15 @@ public class ReviewService {
             scoreEventRepository.save(bonusEvent);
         }
 
+        // 공감 알림 생성
+        notificationService.createNotification(
+                reviewAuthor,
+                user,
+                Notification.NotificationType.SYMPATHY,
+                String.format("%s님이 회원님의 리뷰에 공감했습니다.", user.getName()),
+                review.getRestaurant().getId()
+        );
+
         return ReviewDto.SympathyResponse.builder()
                 .reviewId(reviewId)
                 .sympathyCount(review.getSympathyCount())
@@ -278,6 +432,18 @@ public class ReviewService {
                 .reviewId(reviewId)
                 .sympathyCount(review.getSympathyCount())
                 .hasSympathized(false)
+                .build();
+    }
+
+    // 사용자 영향력 통계 조회
+    public ReviewDto.InfluenceStats getInfluenceStats(Long userId) {
+        User user = findUserById(userId);
+        int totalReferenceCount = reviewReferenceRepository.countByReferenceUser(user);
+        int totalInfluencePoints = reviewReferenceRepository.sumPointsAwardedByReferenceUser(user);
+
+        return ReviewDto.InfluenceStats.builder()
+                .totalReferenceCount(totalReferenceCount)
+                .totalInfluencePoints(totalInfluencePoints)
                 .build();
     }
 
