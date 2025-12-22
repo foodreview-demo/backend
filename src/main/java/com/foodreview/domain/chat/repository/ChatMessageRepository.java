@@ -40,4 +40,17 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
     @Query("SELECT COUNT(m) FROM ChatMessage m WHERE m.chatRoom = :chatRoom AND m.sender != :user " +
            "AND NOT EXISTS (SELECT 1 FROM MessageReadStatus mrs WHERE mrs.message = m AND mrs.user = :user)")
     long countUnreadMessagesByUser(@Param("chatRoom") ChatRoom chatRoom, @Param("user") User user);
+
+    // 여러 채팅방의 읽지 않은 메시지 수를 배치로 조회 (1:1 채팅용) - N+1 방지
+    @Query("SELECT m.chatRoom.id, COUNT(m) FROM ChatMessage m " +
+           "WHERE m.chatRoom.id IN :roomIds AND m.sender.id != :userId AND m.isRead = false " +
+           "GROUP BY m.chatRoom.id")
+    List<Object[]> countUnreadMessagesForRooms(@Param("roomIds") List<Long> roomIds, @Param("userId") Long userId);
+
+    // 여러 채팅방의 읽지 않은 메시지 수를 배치로 조회 (단체톡용) - N+1 방지
+    @Query("SELECT m.chatRoom.id, COUNT(m) FROM ChatMessage m " +
+           "WHERE m.chatRoom.id IN :roomIds AND m.sender.id != :userId " +
+           "AND NOT EXISTS (SELECT 1 FROM MessageReadStatus mrs WHERE mrs.message = m AND mrs.user.id = :userId) " +
+           "GROUP BY m.chatRoom.id")
+    List<Object[]> countUnreadMessagesByUserForRooms(@Param("roomIds") List<Long> roomIds, @Param("userId") Long userId);
 }

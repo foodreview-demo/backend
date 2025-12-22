@@ -26,8 +26,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -88,23 +91,7 @@ public class ReviewService {
         }
 
         Set<Long> sympathizedReviewIds = getSympathizedReviewIds(currentUserId);
-
-        List<ReviewDto.Response> content = reviews.getContent().stream()
-                .map(review -> {
-                    // 참고 정보 조회
-                    ReviewDto.ReferenceInfo referenceInfo = null;
-                    Optional<ReviewReference> reference = reviewReferenceRepository.findByReview(review);
-                    if (reference.isPresent()) {
-                        referenceInfo = ReviewDto.ReferenceInfo.from(
-                                reference.get().getReferenceReview().getId(),
-                                reference.get().getReferenceUser()
-                        );
-                    }
-                    // 이 리뷰를 참고한 횟수
-                    int referenceCount = reviewReferenceRepository.countByReferenceReview(review);
-                    return ReviewDto.Response.from(review, sympathizedReviewIds.contains(review.getId()), referenceInfo, referenceCount);
-                })
-                .toList();
+        List<ReviewDto.Response> content = convertToResponseDtos(reviews.getContent(), sympathizedReviewIds);
 
         return PageResponse.from(reviews, content);
     }
@@ -115,23 +102,7 @@ public class ReviewService {
         Page<Review> reviews = reviewRepository.findByRestaurantOrderByCreatedAtDesc(restaurant, pageable);
 
         Set<Long> sympathizedReviewIds = getSympathizedReviewIds(currentUserId);
-
-        List<ReviewDto.Response> content = reviews.getContent().stream()
-                .map(review -> {
-                    // 참고 정보 조회
-                    ReviewDto.ReferenceInfo referenceInfo = null;
-                    Optional<ReviewReference> reference = reviewReferenceRepository.findByReview(review);
-                    if (reference.isPresent()) {
-                        referenceInfo = ReviewDto.ReferenceInfo.from(
-                                reference.get().getReferenceReview().getId(),
-                                reference.get().getReferenceUser()
-                        );
-                    }
-                    // 이 리뷰를 참고한 횟수
-                    int referenceCount = reviewReferenceRepository.countByReferenceReview(review);
-                    return ReviewDto.Response.from(review, sympathizedReviewIds.contains(review.getId()), referenceInfo, referenceCount);
-                })
-                .toList();
+        List<ReviewDto.Response> content = convertToResponseDtos(reviews.getContent(), sympathizedReviewIds);
 
         return PageResponse.from(reviews, content);
     }
@@ -142,23 +113,7 @@ public class ReviewService {
         Page<Review> reviews = reviewRepository.findByUserOrderByCreatedAtDesc(user, pageable);
 
         Set<Long> sympathizedReviewIds = getSympathizedReviewIds(currentUserId);
-
-        List<ReviewDto.Response> content = reviews.getContent().stream()
-                .map(review -> {
-                    // 참고 정보 조회
-                    ReviewDto.ReferenceInfo referenceInfo = null;
-                    Optional<ReviewReference> reference = reviewReferenceRepository.findByReview(review);
-                    if (reference.isPresent()) {
-                        referenceInfo = ReviewDto.ReferenceInfo.from(
-                                reference.get().getReferenceReview().getId(),
-                                reference.get().getReferenceUser()
-                        );
-                    }
-                    // 이 리뷰를 참고한 횟수
-                    int referenceCount = reviewReferenceRepository.countByReferenceReview(review);
-                    return ReviewDto.Response.from(review, sympathizedReviewIds.contains(review.getId()), referenceInfo, referenceCount);
-                })
-                .toList();
+        List<ReviewDto.Response> content = convertToResponseDtos(reviews.getContent(), sympathizedReviewIds);
 
         return PageResponse.from(reviews, content);
     }
@@ -435,11 +390,11 @@ public class ReviewService {
                 .build();
     }
 
-    // 사용자 영향력 통계 조회
+    // 사용자 영향력 통계 조회 (단일 쿼리로 최적화)
     public ReviewDto.InfluenceStats getInfluenceStats(Long userId) {
-        User user = findUserById(userId);
-        int totalReferenceCount = reviewReferenceRepository.countByReferenceUser(user);
-        int totalInfluencePoints = reviewReferenceRepository.sumPointsAwardedByReferenceUser(user);
+        Object[] stats = reviewReferenceRepository.getInfluenceStatsByUserId(userId);
+        int totalReferenceCount = ((Number) stats[0]).intValue();
+        int totalInfluencePoints = ((Number) stats[1]).intValue();
 
         return ReviewDto.InfluenceStats.builder()
                 .totalReferenceCount(totalReferenceCount)
@@ -450,6 +405,43 @@ public class ReviewService {
     private Set<Long> getSympathizedReviewIds(Long userId) {
         if (userId == null) return new HashSet<>();
         return new HashSet<>(sympathyRepository.findReviewIdsByUserId(userId));
+    }
+
+    // 리뷰 목록을 DTO로 변환 (배치 쿼리로 N+1 방지)
+    private List<ReviewDto.Response> convertToResponseDtos(List<Review> reviews, Set<Long> sympathizedReviewIds) {
+        if (reviews.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> reviewIds = reviews.stream().map(Review::getId).toList();
+
+        // 배치로 참고 정보 조회 (1개 쿼리)
+        Map<Long, ReviewReference> referenceMap = reviewReferenceRepository.findByReviewIds(reviewIds)
+                .stream()
+                .collect(Collectors.toMap(rr -> rr.getReview().getId(), Function.identity()));
+
+        // 배치로 참고된 횟수 조회 (1개 쿼리)
+        Map<Long, Integer> referenceCountMap = reviewReferenceRepository.countByReferenceReviewIds(reviewIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0],
+                        row -> ((Number) row[1]).intValue()
+                ));
+
+        return reviews.stream()
+                .map(review -> {
+                    ReviewDto.ReferenceInfo referenceInfo = null;
+                    ReviewReference reference = referenceMap.get(review.getId());
+                    if (reference != null) {
+                        referenceInfo = ReviewDto.ReferenceInfo.from(
+                                reference.getReferenceReview().getId(),
+                                reference.getReferenceUser()
+                        );
+                    }
+                    int referenceCount = referenceCountMap.getOrDefault(review.getId(), 0);
+                    return ReviewDto.Response.from(review, sympathizedReviewIds.contains(review.getId()), referenceInfo, referenceCount);
+                })
+                .toList();
     }
 
     private Review findReviewById(Long reviewId) {

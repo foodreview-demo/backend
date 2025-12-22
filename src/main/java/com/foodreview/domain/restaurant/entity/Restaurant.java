@@ -7,7 +7,12 @@ import lombok.*;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "restaurants")
+@Table(name = "restaurants",
+        indexes = {
+            @Index(name = "idx_restaurant_region_category", columnList = "region, category"),
+            @Index(name = "idx_restaurant_category", columnList = "category")
+        }
+)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
