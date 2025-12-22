@@ -18,7 +18,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.IntStream;
 
 @Service
@@ -72,10 +74,10 @@ public class UserService {
         return PageResponse.from(users, rankings);
     }
 
-    // 친구 추천
+    // 친구 추천 (HashSet 사용으로 O(1) 검색 최적화)
     public List<UserDto.RecommendResponse> getRecommendedFriends(Long userId, int limit) {
         User currentUser = findUserById(userId);
-        List<Long> followingIds = followRepository.findFollowingIdsByFollowerId(userId);
+        Set<Long> followingIds = new HashSet<>(followRepository.findFollowingIdsByFollowerId(userId));
 
         List<User> recommended = userRepository.findRecommendedFriends(
                 currentUser.getRegion(), userId, PageRequest.of(0, limit + followingIds.size())
@@ -175,11 +177,9 @@ public class UserService {
         return PageResponse.from(events, content);
     }
 
-    // 팔로우 여부 확인
+    // 팔로우 여부 확인 (단일 쿼리로 최적화)
     public boolean isFollowing(Long followerId, Long followingId) {
-        User follower = findUserById(followerId);
-        User following = findUserById(followingId);
-        return followRepository.existsByFollowerAndFollowing(follower, following);
+        return followRepository.existsByFollowerIdAndFollowingId(followerId, followingId);
     }
 
     private User findUserById(Long userId) {

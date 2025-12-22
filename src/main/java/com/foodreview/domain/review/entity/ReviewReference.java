@@ -6,9 +6,15 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "review_references", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"review_id", "reference_review_id"})
-})
+@Table(name = "review_references",
+        uniqueConstraints = {
+            @UniqueConstraint(columnNames = {"review_id", "reference_review_id"})
+        },
+        indexes = {
+            @Index(name = "idx_review_ref_reference_review", columnList = "reference_review_id"),
+            @Index(name = "idx_review_ref_reference_user", columnList = "reference_user_id")
+        }
+)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor

@@ -12,8 +12,11 @@ import java.util.Optional;
 
 public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
 
-    // 사용자의 채팅방 목록 (1:1 채팅 + 단체톡 모두 포함)
-    @Query("SELECT DISTINCT c FROM ChatRoom c LEFT JOIN c.members m " +
+    // 사용자의 채팅방 목록 (1:1 채팅 + 단체톡 모두 포함) - user1, user2 JOIN FETCH 추가
+    @Query("SELECT DISTINCT c FROM ChatRoom c " +
+           "LEFT JOIN FETCH c.user1 " +
+           "LEFT JOIN FETCH c.user2 " +
+           "LEFT JOIN c.members m " +
            "WHERE c.user1 = :user OR c.user2 = :user OR m.user = :user " +
            "ORDER BY c.lastMessageAt DESC")
     Page<ChatRoom> findByUser(@Param("user") User user, Pageable pageable);
@@ -24,6 +27,13 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
            "(c.user1 = :user2 AND c.user2 = :user1))")
     Optional<ChatRoom> findByUsers(@Param("user1") User user1, @Param("user2") User user2);
 
-    // UUID로 채팅방 조회
+    // UUID로 채팅방 조회 (user1, user2 JOIN FETCH)
+    @Query("SELECT c FROM ChatRoom c " +
+           "LEFT JOIN FETCH c.user1 " +
+           "LEFT JOIN FETCH c.user2 " +
+           "WHERE c.uuid = :uuid")
+    Optional<ChatRoom> findByUuidWithUsers(@Param("uuid") String uuid);
+
+    // UUID로 채팅방 조회 (기본)
     Optional<ChatRoom> findByUuid(String uuid);
 }

@@ -6,7 +6,12 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "chat_messages")
+@Table(name = "chat_messages",
+        indexes = {
+            @Index(name = "idx_chat_message_room_created", columnList = "chat_room_id, created_at DESC"),
+            @Index(name = "idx_chat_message_sender", columnList = "sender_id")
+        }
+)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor

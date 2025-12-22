@@ -22,10 +22,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import org.springframework.dao.DataIntegrityViolationException;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -38,31 +40,64 @@ public class ChatService {
     private final MessageReadStatusRepository messageReadStatusRepository;
     private final UserRepository userRepository;
 
-    // 채팅방 목록 조회
+    // 채팅방 목록 조회 (배치 쿼리로 N+1 방지)
     @Transactional
     public PageResponse<ChatDto.RoomResponse> getChatRooms(Long userId, Pageable pageable) {
         User user = findUserById(userId);
         Page<ChatRoom> rooms = chatRoomRepository.findByUser(user, pageable);
+        List<ChatRoom> roomList = rooms.getContent();
 
-        List<ChatDto.RoomResponse> content = rooms.getContent().stream()
+        if (roomList.isEmpty()) {
+            return PageResponse.from(rooms, List.of());
+        }
+
+        // UUID 보장
+        roomList.forEach(ChatRoom::ensureUuid);
+
+        // 룸 ID 목록 추출
+        List<Long> roomIds = roomList.stream().map(ChatRoom::getId).toList();
+        List<Long> directRoomIds = roomList.stream()
+                .filter(r -> r.getRoomType() == ChatRoom.RoomType.DIRECT)
+                .map(ChatRoom::getId).toList();
+        List<Long> groupRoomIds = roomList.stream()
+                .filter(r -> r.getRoomType() == ChatRoom.RoomType.GROUP)
+                .map(ChatRoom::getId).toList();
+
+        // 배치로 읽지 않은 메시지 수 조회 (1:1 채팅용)
+        Map<Long, Long> directUnreadCountMap = new HashMap<>();
+        if (!directRoomIds.isEmpty()) {
+            chatMessageRepository.countUnreadMessagesForRooms(directRoomIds, userId)
+                    .forEach(row -> directUnreadCountMap.put((Long) row[0], (Long) row[1]));
+        }
+
+        // 배치로 읽지 않은 메시지 수 조회 (단체톡용)
+        Map<Long, Long> groupUnreadCountMap = new HashMap<>();
+        if (!groupRoomIds.isEmpty()) {
+            chatMessageRepository.countUnreadMessagesByUserForRooms(groupRoomIds, userId)
+                    .forEach(row -> groupUnreadCountMap.put((Long) row[0], (Long) row[1]));
+        }
+
+        // 배치로 단체톡 멤버 조회
+        Map<Long, List<ChatRoomMember>> memberMap = new HashMap<>();
+        if (!groupRoomIds.isEmpty()) {
+            List<ChatRoomMember> allMembers = chatRoomMemberRepository.findByRoomIdsWithUser(groupRoomIds);
+            memberMap = allMembers.stream()
+                    .collect(Collectors.groupingBy(m -> m.getChatRoom().getId()));
+        }
+
+        // DTO 변환
+        final Map<Long, List<ChatRoomMember>> finalMemberMap = memberMap;
+        List<ChatDto.RoomResponse> content = roomList.stream()
                 .map(room -> {
-                    // 기존 채팅방에 UUID가 없으면 생성
-                    room.ensureUuid();
-
                     long unreadCount;
                     if (room.getRoomType() == ChatRoom.RoomType.GROUP) {
-                        // 단체톡: MessageReadStatus 테이블 기준
-                        unreadCount = chatMessageRepository.countUnreadMessagesByUser(room, user);
-                    } else {
-                        // 1:1 채팅: 기존 isRead 필드 기준
-                        unreadCount = chatMessageRepository.countUnreadMessages(room, user);
-                    }
-
-                    if (room.getRoomType() == ChatRoom.RoomType.GROUP) {
-                        List<ChatRoomMember> members = chatRoomMemberRepository.findByChatRoom(room);
+                        unreadCount = groupUnreadCountMap.getOrDefault(room.getId(), 0L);
+                        List<ChatRoomMember> members = finalMemberMap.getOrDefault(room.getId(), List.of());
                         return ChatDto.RoomResponse.fromGroup(room, members, unreadCount);
+                    } else {
+                        unreadCount = directUnreadCountMap.getOrDefault(room.getId(), 0L);
+                        return ChatDto.RoomResponse.from(room, user, unreadCount);
                     }
-                    return ChatDto.RoomResponse.from(room, user, unreadCount);
                 })
                 .toList();
 

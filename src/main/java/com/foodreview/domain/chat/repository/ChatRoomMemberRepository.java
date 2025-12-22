@@ -40,4 +40,8 @@ public interface ChatRoomMemberRepository extends JpaRepository<ChatRoomMember, 
     // 채팅방의 방장 조회
     @Query("SELECT m FROM ChatRoomMember m WHERE m.chatRoom = :chatRoom AND m.role = 'OWNER'")
     Optional<ChatRoomMember> findOwnerByChatRoom(@Param("chatRoom") ChatRoom chatRoom);
+
+    // 여러 채팅방의 멤버들을 배치로 조회 (User JOIN FETCH) - N+1 방지
+    @Query("SELECT m FROM ChatRoomMember m JOIN FETCH m.user WHERE m.chatRoom.id IN :roomIds")
+    List<ChatRoomMember> findByRoomIdsWithUser(@Param("roomIds") List<Long> roomIds);
 }
