@@ -392,9 +392,20 @@ public class ReviewService {
 
     // 사용자 영향력 통계 조회 (단일 쿼리로 최적화)
     public ReviewDto.InfluenceStats getInfluenceStats(Long userId) {
-        Object[] stats = reviewReferenceRepository.getInfluenceStatsByUserId(userId);
-        int totalReferenceCount = ((Number) stats[0]).intValue();
-        int totalInfluencePoints = ((Number) stats[1]).intValue();
+        List<Object[]> result = reviewReferenceRepository.getInfluenceStatsByUserId(userId);
+
+        int totalReferenceCount = 0;
+        int totalInfluencePoints = 0;
+
+        if (result != null && !result.isEmpty()) {
+            Object[] stats = result.get(0);
+            if (stats[0] != null) {
+                totalReferenceCount = ((Number) stats[0]).intValue();
+            }
+            if (stats[1] != null) {
+                totalInfluencePoints = ((Number) stats[1]).intValue();
+            }
+        }
 
         return ReviewDto.InfluenceStats.builder()
                 .totalReferenceCount(totalReferenceCount)

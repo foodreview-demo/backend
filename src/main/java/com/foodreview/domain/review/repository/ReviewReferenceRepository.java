@@ -43,7 +43,7 @@ public interface ReviewReferenceRepository extends JpaRepository<ReviewReference
 
     // 사용자 영향력 통계 조회 (횟수 + 포인트 한 번에) - 쿼리 최적화
     @Query("SELECT COUNT(rr), COALESCE(SUM(rr.pointsAwarded), 0) FROM ReviewReference rr WHERE rr.referenceUser.id = :userId")
-    Object[] getInfluenceStatsByUserId(@Param("userId") Long userId);
+    List<Object[]> getInfluenceStatsByUserId(@Param("userId") Long userId);
 
     // 상호 참고 체크: A가 B의 리뷰를 참고했는지 확인 (A의 리뷰 작성자가 reviewUser, B의 리뷰 작성자가 referenceUser)
     @Query("SELECT COUNT(rr) > 0 FROM ReviewReference rr " +
