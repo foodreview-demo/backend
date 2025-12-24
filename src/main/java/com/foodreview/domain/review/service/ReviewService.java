@@ -17,6 +17,7 @@ import com.foodreview.domain.user.repository.ScoreEventRepository;
 import com.foodreview.domain.user.repository.UserRepository;
 import com.foodreview.global.common.PageResponse;
 import com.foodreview.global.exception.CustomException;
+import com.foodreview.global.util.HtmlSanitizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -74,19 +75,47 @@ public class ReviewService {
         return ReviewDto.Response.from(review, hasSympathized, referenceInfo, referenceCount);
     }
 
-    // 리뷰 목록 조회 (필터링)
+    // 리뷰 목록 조회 (필터링) - 기존 호환
     public PageResponse<ReviewDto.Response> getReviews(String region, String category, Long currentUserId, Pageable pageable) {
-        Page<Review> reviews;
+        return getReviews(region, null, null, category, currentUserId, pageable);
+    }
 
-        if (region != null && category != null) {
-            Restaurant.Category cat = Restaurant.Category.valueOf(category);
-            reviews = reviewRepository.findByRegionAndCategory(region, cat, pageable);
-        } else if (region != null) {
-            reviews = reviewRepository.findByRegion(region, pageable);
-        } else if (category != null) {
-            Restaurant.Category cat = Restaurant.Category.valueOf(category);
+    // 리뷰 목록 조회 (동 단위 필터링 지원)
+    public PageResponse<ReviewDto.Response> getReviews(String region, String district, String neighborhood,
+                                                        String category, Long currentUserId, Pageable pageable) {
+        Page<Review> reviews;
+        Restaurant.Category cat = category != null ? Restaurant.Category.valueOf(category) : null;
+
+        // 동 단위 필터링 (가장 세밀한 필터)
+        if (neighborhood != null) {
+            if (cat != null) {
+                reviews = reviewRepository.findByNeighborhoodAndCategory(neighborhood, cat, pageable);
+            } else {
+                reviews = reviewRepository.findByNeighborhood(neighborhood, pageable);
+            }
+        }
+        // 구 단위 필터링
+        else if (district != null) {
+            if (cat != null) {
+                reviews = reviewRepository.findByDistrictAndCategory(district, cat, pageable);
+            } else {
+                reviews = reviewRepository.findByDistrict(district, pageable);
+            }
+        }
+        // 시/도 단위 필터링 (기존)
+        else if (region != null) {
+            if (cat != null) {
+                reviews = reviewRepository.findByRegionAndCategory(region, cat, pageable);
+            } else {
+                reviews = reviewRepository.findByRegion(region, pageable);
+            }
+        }
+        // 카테고리만 필터링
+        else if (cat != null) {
             reviews = reviewRepository.findByCategory(cat, pageable);
-        } else {
+        }
+        // 전체 조회
+        else {
             reviews = reviewRepository.findAllByOrderByCreatedAtDesc(pageable);
         }
 
@@ -94,6 +123,22 @@ public class ReviewService {
         List<ReviewDto.Response> content = convertToResponseDtos(reviews.getContent(), sympathizedReviewIds);
 
         return PageResponse.from(reviews, content);
+    }
+
+    // 동별 리뷰 수 집계 (지도 마커용)
+    public List<ReviewDto.NeighborhoodCount> getReviewCountByNeighborhood(String region, String district) {
+        List<Object[]> results = reviewRepository.countByNeighborhood(region, district);
+        return results.stream()
+                .map(row -> new ReviewDto.NeighborhoodCount((String) row[0], (Long) row[1]))
+                .collect(Collectors.toList());
+    }
+
+    // 구별 리뷰 수 집계
+    public List<ReviewDto.DistrictCount> getReviewCountByDistrict(String region) {
+        List<Object[]> results = reviewRepository.countByDistrict(region);
+        return results.stream()
+                .map(row -> new ReviewDto.DistrictCount((String) row[0], (Long) row[1]))
+                .collect(Collectors.toList());
     }
 
     // 음식점별 리뷰 조회
@@ -131,10 +176,13 @@ public class ReviewService {
 
         boolean isFirstReview = restaurant.isFirstReviewAvailable();
 
+        // XSS 방지를 위한 리뷰 콘텐츠 새니타이징
+        String sanitizedContent = HtmlSanitizer.sanitizeReviewContent(request.getContent());
+
         Review review = Review.builder()
                 .user(user)
                 .restaurant(restaurant)
-                .content(request.getContent())
+                .content(sanitizedContent)
                 .rating(request.getRating())
                 .tasteRating(request.getTasteRating())
                 .priceRating(request.getPriceRating())

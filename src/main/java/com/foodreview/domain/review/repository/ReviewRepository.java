@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
+
 public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     // 사용자별 리뷰 조회
@@ -37,4 +39,40 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     // 음식점에 사용자가 이미 리뷰를 작성했는지 확인
     boolean existsByUserAndRestaurant(User user, Restaurant restaurant);
+
+    // 동(neighborhood) 단위 필터링
+    @Query("SELECT r FROM Review r WHERE r.restaurant.neighborhood = :neighborhood ORDER BY r.createdAt DESC")
+    Page<Review> findByNeighborhood(@Param("neighborhood") String neighborhood, Pageable pageable);
+
+    // 동 + 카테고리 필터링
+    @Query("SELECT r FROM Review r WHERE r.restaurant.neighborhood = :neighborhood AND r.restaurant.category = :category ORDER BY r.createdAt DESC")
+    Page<Review> findByNeighborhoodAndCategory(
+            @Param("neighborhood") String neighborhood,
+            @Param("category") Restaurant.Category category,
+            Pageable pageable);
+
+    // 구(district) 단위 필터링
+    @Query("SELECT r FROM Review r WHERE r.restaurant.district = :district ORDER BY r.createdAt DESC")
+    Page<Review> findByDistrict(@Param("district") String district, Pageable pageable);
+
+    // 구 + 카테고리 필터링
+    @Query("SELECT r FROM Review r WHERE r.restaurant.district = :district AND r.restaurant.category = :category ORDER BY r.createdAt DESC")
+    Page<Review> findByDistrictAndCategory(
+            @Param("district") String district,
+            @Param("category") Restaurant.Category category,
+            Pageable pageable);
+
+    // 동별 리뷰 수 집계 (지도 마커용)
+    @Query("SELECT r.restaurant.neighborhood, COUNT(r) FROM Review r " +
+           "WHERE r.restaurant.region = :region AND r.restaurant.district = :district " +
+           "AND r.restaurant.neighborhood IS NOT NULL " +
+           "GROUP BY r.restaurant.neighborhood")
+    List<Object[]> countByNeighborhood(@Param("region") String region, @Param("district") String district);
+
+    // 구별 리뷰 수 집계
+    @Query("SELECT r.restaurant.district, COUNT(r) FROM Review r " +
+           "WHERE r.restaurant.region = :region " +
+           "AND r.restaurant.district IS NOT NULL " +
+           "GROUP BY r.restaurant.district")
+    List<Object[]> countByDistrict(@Param("region") String region);
 }

@@ -31,8 +31,8 @@ server:
 
 # JWT Configuration
 jwt:
-  secret: ${JWT_SECRET:your-256-bit-secret-key-here-must-be-at-least-32-characters}
-  expiration: 86400000 # 24 hours in milliseconds
+  secret: ${JWT_SECRET:asffgkjkashjjfdhkfhakhfkwehejnasmnasfdasf}
+  expiration: 3600000 # 1 hour in milliseconds (보안 강화)
   refresh-expiration: 604800000 # 7 days in milliseconds
 
 # Swagger/OpenAPI
@@ -67,3 +67,7 @@ oauth:
     client-id: ${KAKAO_CLIENT_ID:013f1f5f18776dadc308d781b0ffded5}
     client-secret: ${KAKAO_CLIENT_SECRET:9rGMKniJgUdrNuB1EUOdAymDhwWv3Rti}
     redirect-uri: ${KAKAO_REDIRECT_URI:http://localhost:3000/oauth/kakao/callback}
+
+# CORS Configuration (보안 강화)
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:3001}
