@@ -181,4 +181,20 @@ public class ReviewDto {
         private Integer sympathyCount;
         private Boolean hasSympathized;
     }
+
+    // 동별 리뷰 수 (지도 마커용)
+    @Getter
+    @AllArgsConstructor
+    public static class NeighborhoodCount {
+        private String neighborhood;
+        private Long count;
+    }
+
+    // 구별 리뷰 수
+    @Getter
+    @AllArgsConstructor
+    public static class DistrictCount {
+        private String district;
+        private Long count;
+    }
 }

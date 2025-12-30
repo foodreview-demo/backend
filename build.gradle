@@ -55,6 +55,9 @@ dependencies {
     implementation platform('software.amazon.awssdk:bom:2.25.0')
 	implementation 'software.amazon.awssdk:s3'
 
+    // Rate Limiting (보안 강화)
+    implementation 'com.bucket4j:bucket4j-core:8.7.0'
+
     // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'

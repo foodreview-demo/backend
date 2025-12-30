@@ -14,9 +14,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.List;	
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -37,6 +41,16 @@ public class ImageService {
     private static final List<String> ALLOWED_CONTENT_TYPES = List.of(
             "image/jpeg", "image/png", "image/gif", "image/webp"
     );
+    private static final List<String> ALLOWED_EXTENSIONS = List.of(
+            ".jpg", ".jpeg", ".png", ".gif", ".webp"
+    );
+
+    // Magic Bytes (파일 시그니처)
+    private static final byte[] JPEG_MAGIC = new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF};
+    private static final byte[] PNG_MAGIC = new byte[]{(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
+    private static final byte[] GIF_MAGIC_87 = new byte[]{0x47, 0x49, 0x46, 0x38, 0x37, 0x61}; // GIF87a
+    private static final byte[] GIF_MAGIC_89 = new byte[]{0x47, 0x49, 0x46, 0x38, 0x39, 0x61}; // GIF89a
+    private static final byte[] WEBP_MAGIC = new byte[]{0x52, 0x49, 0x46, 0x46}; // RIFF (WebP는 RIFF 컨테이너)
 
     public ImageDto.UploadResponse uploadImages(List<MultipartFile> files) {
         if (files == null || files.isEmpty()) {
@@ -74,11 +88,98 @@ public class ImageService {
                     HttpStatus.BAD_REQUEST);
         }
 
+        // 1. Content-Type 검증
         String contentType = file.getContentType();
         if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType)) {
             throw new CustomException(
                     "지원되지 않는 파일 형식입니다. (JPEG, PNG, GIF, WebP만 허용)",
                     HttpStatus.BAD_REQUEST);
+        }
+
+        // 2. Magic Bytes (파일 시그니처) 검증 - 보안 강화
+        if (!validateMagicBytes(file)) {
+            log.warn("파일 시그니처 검증 실패: contentType={}, filename={}",
+                    contentType, file.getOriginalFilename());
+            throw new CustomException(
+                    "파일 형식이 올바르지 않습니다. 실제 이미지 파일만 업로드해주세요.",
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        // 3. 실제 이미지로 읽을 수 있는지 검증
+        if (!isValidImage(file)) {
+            log.warn("이미지 디코딩 실패: contentType={}, filename={}",
+                    contentType, file.getOriginalFilename());
+            throw new CustomException(
+                    "손상된 이미지 파일입니다. 다른 파일을 업로드해주세요.",
+                    HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    /**
+     * Magic Bytes (파일 시그니처) 검증
+     * Content-Type 위조 방지를 위해 파일의 실제 바이너리 헤더를 검사
+     */
+    private boolean validateMagicBytes(MultipartFile file) {
+        try (InputStream is = file.getInputStream()) {
+            byte[] header = new byte[12]; // 충분한 크기의 헤더 읽기
+            int bytesRead = is.read(header);
+
+            if (bytesRead < 3) {
+                return false;
+            }
+
+            // JPEG: FF D8 FF
+            if (startsWith(header, JPEG_MAGIC)) {
+                return true;
+            }
+
+            // PNG: 89 50 4E 47 0D 0A 1A 0A
+            if (bytesRead >= 8 && startsWith(header, PNG_MAGIC)) {
+                return true;
+            }
+
+            // GIF87a 또는 GIF89a
+            if (bytesRead >= 6 && (startsWith(header, GIF_MAGIC_87) || startsWith(header, GIF_MAGIC_89))) {
+                return true;
+            }
+
+            // WebP: RIFF....WEBP
+            if (bytesRead >= 12 && startsWith(header, WEBP_MAGIC)) {
+                // WebP는 RIFF 컨테이너이므로 8-11 바이트가 "WEBP"인지 확인
+                byte[] webpSignature = new byte[]{0x57, 0x45, 0x42, 0x50}; // "WEBP"
+                byte[] headerPart = Arrays.copyOfRange(header, 8, 12);
+                return Arrays.equals(headerPart, webpSignature);
+            }
+
+            return false;
+        } catch (IOException e) {
+            log.error("파일 읽기 실패", e);
+            return false;
+        }
+    }
+
+    private boolean startsWith(byte[] array, byte[] prefix) {
+        if (array.length < prefix.length) {
+            return false;
+        }
+        for (int i = 0; i < prefix.length; i++) {
+            if (array[i] != prefix[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 실제 이미지로 디코딩 가능한지 검증
+     */
+    private boolean isValidImage(MultipartFile file) {
+        try (InputStream is = file.getInputStream()) {
+            BufferedImage image = ImageIO.read(is);
+            return image != null && image.getWidth() > 0 && image.getHeight() > 0;
+        } catch (IOException e) {
+            log.error("이미지 디코딩 실패", e);
+            return false;
         }
     }
 
@@ -128,7 +229,9 @@ public class ImageService {
         if (filename == null || !filename.contains(".")) {
             return ".jpg";
         }
-        return filename.substring(filename.lastIndexOf("."));
+        String ext = filename.substring(filename.lastIndexOf(".")).toLowerCase();
+        // 화이트리스트에 있는 확장자만 허용
+        return ALLOWED_EXTENSIONS.contains(ext) ? ext : ".jpg";
     }
 
     private String getPublicUrl(String key) {

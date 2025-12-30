@@ -39,6 +39,8 @@ out/
 ### Environment ###
 .env
 *.env.local
+application-local.yml
+**/application-local.yml
 
 ### Logs ###
 logs/

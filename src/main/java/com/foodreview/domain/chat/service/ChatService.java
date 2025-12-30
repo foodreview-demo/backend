@@ -13,6 +13,7 @@ import com.foodreview.domain.user.entity.User;
 import com.foodreview.domain.user.repository.UserRepository;
 import com.foodreview.global.common.PageResponse;
 import com.foodreview.global.exception.CustomException;
+import com.foodreview.global.util.HtmlSanitizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -272,16 +273,19 @@ public class ChatService {
         // 채팅방 참여자인지 확인
         validateChatRoomParticipant(room, userId);
 
+        // XSS 방지를 위한 메시지 새니타이징
+        String sanitizedContent = HtmlSanitizer.sanitizeChatMessage(content);
+
         ChatMessage message = ChatMessage.builder()
                 .chatRoom(room)
                 .sender(sender)
-                .content(content)
+                .content(sanitizedContent)
                 .build();
 
         ChatMessage saved = chatMessageRepository.save(message);
 
         // 채팅방 마지막 메시지 업데이트
-        room.updateLastMessage(content);
+        room.updateLastMessage(sanitizedContent);
 
         // 수신자 ID 목록 조회 (나 제외)
         List<Long> recipientIds = room.getAllMemberIds().stream()

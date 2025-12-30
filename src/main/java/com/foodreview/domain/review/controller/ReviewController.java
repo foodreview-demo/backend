@@ -17,6 +17,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @Tag(name = "Review", description = "리뷰 API")
 @RestController
 @RequestMapping("/api/reviews")
@@ -25,15 +27,34 @@ public class ReviewController {
 
     private final ReviewService reviewService;
 
-    @Operation(summary = "리뷰 목록 조회")
+    @Operation(summary = "리뷰 목록 조회 (동/구/시 단위 필터링 지원)")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<ReviewDto.Response>>> getReviews(
             @RequestParam(name = "region", required = false) String region,
+            @RequestParam(name = "district", required = false) String district,
+            @RequestParam(name = "neighborhood", required = false) String neighborhood,
             @RequestParam(name = "category", required = false) String category,
             @CurrentUser CustomUserDetails userDetails,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         Long userId = userDetails != null ? userDetails.getUserId() : null;
-        PageResponse<ReviewDto.Response> response = reviewService.getReviews(region, category, userId, pageable);
+        PageResponse<ReviewDto.Response> response = reviewService.getReviews(region, district, neighborhood, category, userId, pageable);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(summary = "동별 리뷰 수 조회 (지도 마커용)")
+    @GetMapping("/count-by-neighborhood")
+    public ResponseEntity<ApiResponse<List<ReviewDto.NeighborhoodCount>>> getReviewCountByNeighborhood(
+            @RequestParam(name = "region") String region,
+            @RequestParam(name = "district") String district) {
+        List<ReviewDto.NeighborhoodCount> response = reviewService.getReviewCountByNeighborhood(region, district);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(summary = "구별 리뷰 수 조회")
+    @GetMapping("/count-by-district")
+    public ResponseEntity<ApiResponse<List<ReviewDto.DistrictCount>>> getReviewCountByDistrict(
+            @RequestParam(name = "region") String region) {
+        List<ReviewDto.DistrictCount> response = reviewService.getReviewCountByDistrict(region);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
