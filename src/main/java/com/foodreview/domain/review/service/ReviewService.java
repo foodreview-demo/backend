@@ -25,6 +25,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -87,11 +88,23 @@ public class ReviewService {
         Restaurant.Category cat = category != null ? Restaurant.Category.valueOf(category) : null;
 
         // 동 단위 필터링 (가장 세밀한 필터)
+        // neighborhood가 콤마로 구분된 경우 IN 절 사용
         if (neighborhood != null) {
-            if (cat != null) {
-                reviews = reviewRepository.findByNeighborhoodAndCategory(neighborhood, cat, pageable);
+            List<String> neighborhoods = Arrays.asList(neighborhood.split(","));
+            if (neighborhoods.size() > 1) {
+                // 복수 동 필터링
+                if (cat != null) {
+                    reviews = reviewRepository.findByNeighborhoodInAndCategory(neighborhoods, cat, pageable);
+                } else {
+                    reviews = reviewRepository.findByNeighborhoodIn(neighborhoods, pageable);
+                }
             } else {
-                reviews = reviewRepository.findByNeighborhood(neighborhood, pageable);
+                // 단일 동 필터링
+                if (cat != null) {
+                    reviews = reviewRepository.findByNeighborhoodAndCategory(neighborhood, cat, pageable);
+                } else {
+                    reviews = reviewRepository.findByNeighborhood(neighborhood, pageable);
+                }
             }
         }
         // 구 단위 필터링

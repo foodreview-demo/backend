@@ -40,14 +40,25 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     // 음식점에 사용자가 이미 리뷰를 작성했는지 확인
     boolean existsByUserAndRestaurant(User user, Restaurant restaurant);
 
-    // 동(neighborhood) 단위 필터링
+    // 동(neighborhood) 단위 필터링 - 단일 동
     @Query("SELECT r FROM Review r WHERE r.restaurant.neighborhood = :neighborhood ORDER BY r.createdAt DESC")
     Page<Review> findByNeighborhood(@Param("neighborhood") String neighborhood, Pageable pageable);
 
-    // 동 + 카테고리 필터링
+    // 동 + 카테고리 필터링 - 단일 동
     @Query("SELECT r FROM Review r WHERE r.restaurant.neighborhood = :neighborhood AND r.restaurant.category = :category ORDER BY r.createdAt DESC")
     Page<Review> findByNeighborhoodAndCategory(
             @Param("neighborhood") String neighborhood,
+            @Param("category") Restaurant.Category category,
+            Pageable pageable);
+
+    // 동(neighborhood) 단위 필터링 - 복수 동 (IN 절)
+    @Query("SELECT r FROM Review r WHERE r.restaurant.neighborhood IN :neighborhoods ORDER BY r.createdAt DESC")
+    Page<Review> findByNeighborhoodIn(@Param("neighborhoods") List<String> neighborhoods, Pageable pageable);
+
+    // 동 + 카테고리 필터링 - 복수 동 (IN 절)
+    @Query("SELECT r FROM Review r WHERE r.restaurant.neighborhood IN :neighborhoods AND r.restaurant.category = :category ORDER BY r.createdAt DESC")
+    Page<Review> findByNeighborhoodInAndCategory(
+            @Param("neighborhoods") List<String> neighborhoods,
             @Param("category") Restaurant.Category category,
             Pageable pageable);
 
