@@ -10,6 +10,7 @@ import com.foodreview.domain.chat.repository.ChatRoomMemberRepository;
 import com.foodreview.domain.chat.repository.ChatRoomRepository;
 import com.foodreview.domain.chat.repository.MessageReadStatusRepository;
 import com.foodreview.domain.user.entity.User;
+import com.foodreview.domain.user.repository.UserBlockRepository;
 import com.foodreview.domain.user.repository.UserRepository;
 import com.foodreview.global.common.PageResponse;
 import com.foodreview.global.exception.CustomException;
@@ -25,9 +26,11 @@ import org.springframework.dao.DataIntegrityViolationException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -40,6 +43,7 @@ public class ChatService {
     private final ChatRoomMemberRepository chatRoomMemberRepository;
     private final MessageReadStatusRepository messageReadStatusRepository;
     private final UserRepository userRepository;
+    private final UserBlockRepository userBlockRepository;
 
     // 채팅방 목록 조회 (배치 쿼리로 N+1 방지)
     @Transactional
@@ -55,12 +59,34 @@ public class ChatService {
         // UUID 보장
         roomList.forEach(ChatRoom::ensureUuid);
 
-        // 룸 ID 목록 추출
-        List<Long> roomIds = roomList.stream().map(ChatRoom::getId).toList();
-        List<Long> directRoomIds = roomList.stream()
+        // 차단된 사용자 ID 목록 조회 (내가 차단한 + 나를 차단한)
+        Set<Long> blockedUserIds = new HashSet<>(userBlockRepository.findBlockedUserIdsByBlockerId(userId));
+        Set<Long> blockedByUserIds = new HashSet<>(userBlockRepository.findBlockerIdsByBlockedUserId(userId));
+        Set<Long> allBlockedIds = new HashSet<>();
+        allBlockedIds.addAll(blockedUserIds);
+        allBlockedIds.addAll(blockedByUserIds);
+
+        // 1:1 채팅방에서 차단된 관계 필터링
+        List<ChatRoom> filteredRoomList = roomList.stream()
+                .filter(room -> {
+                    if (room.getRoomType() == ChatRoom.RoomType.DIRECT) {
+                        // 상대방이 차단된 관계인지 확인
+                        Long otherUserId = room.getOtherUser(userId).getId();
+                        return !allBlockedIds.contains(otherUserId);
+                    }
+                    return true;  // 단체톡은 유지
+                })
+                .toList();
+
+        if (filteredRoomList.isEmpty()) {
+            return PageResponse.from(rooms, List.of());
+        }
+
+        // 룸 ID 목록 추출 (필터링된 목록에서)
+        List<Long> directRoomIds = filteredRoomList.stream()
                 .filter(r -> r.getRoomType() == ChatRoom.RoomType.DIRECT)
                 .map(ChatRoom::getId).toList();
-        List<Long> groupRoomIds = roomList.stream()
+        List<Long> groupRoomIds = filteredRoomList.stream()
                 .filter(r -> r.getRoomType() == ChatRoom.RoomType.GROUP)
                 .map(ChatRoom::getId).toList();
 
@@ -88,7 +114,7 @@ public class ChatService {
 
         // DTO 변환
         final Map<Long, List<ChatRoomMember>> finalMemberMap = memberMap;
-        List<ChatDto.RoomResponse> content = roomList.stream()
+        List<ChatDto.RoomResponse> content = filteredRoomList.stream()
                 .map(room -> {
                     long unreadCount;
                     if (room.getRoomType() == ChatRoom.RoomType.GROUP) {
@@ -110,6 +136,12 @@ public class ChatService {
     public ChatDto.RoomResponse getOrCreateChatRoom(Long userId, Long otherUserId) {
         if (userId.equals(otherUserId)) {
             throw new CustomException("자기 자신과 채팅할 수 없습니다", HttpStatus.BAD_REQUEST);
+        }
+
+        // 차단 관계 확인
+        if (userBlockRepository.existsByBlockerIdAndBlockedUserId(userId, otherUserId) ||
+            userBlockRepository.existsByBlockerIdAndBlockedUserId(otherUserId, userId)) {
+            throw new CustomException("차단된 사용자와는 채팅할 수 없습니다", HttpStatus.FORBIDDEN, "BLOCKED_USER");
         }
 
         User user = findUserById(userId);
@@ -162,6 +194,9 @@ public class ChatService {
         // 채팅방 참여자인지 확인
         validateChatRoomParticipant(room, userId);
 
+        // 차단된 사용자 ID 목록 조회
+        Set<Long> blockedUserIds = new HashSet<>(userBlockRepository.findBlockedUserIdsByBlockerId(userId));
+
         Page<ChatMessage> messages = chatMessageRepository.findByChatRoomOrderByCreatedAtAsc(room, pageable);
 
         if (room.getRoomType() == ChatRoom.RoomType.GROUP) {
@@ -184,6 +219,7 @@ public class ChatService {
             int memberCount = room.getMembers().size() - 1;  // 본인 제외
 
             List<ChatDto.MessageResponse> content = messageList.stream()
+                    .filter(msg -> msg.getSender() == null || !blockedUserIds.contains(msg.getSender().getId()))
                     .map(msg -> {
                         int readCount = readCountMap.getOrDefault(msg.getId(), 0L).intValue();
                         return ChatDto.MessageResponse.fromWithReadCount(msg, userId, readCount, memberCount);
@@ -196,6 +232,7 @@ public class ChatService {
             chatMessageRepository.markAllAsRead(room, user);
 
             List<ChatDto.MessageResponse> content = messages.getContent().stream()
+                    .filter(msg -> msg.getSender() == null || !blockedUserIds.contains(msg.getSender().getId()))
                     .map(msg -> ChatDto.MessageResponse.from(msg, userId))
                     .toList();
 
@@ -366,6 +403,16 @@ public class ChatService {
 
         // 채팅방 참여자인지 확인
         validateChatRoomParticipant(room, userId);
+
+        // 1:1 채팅방인 경우 차단 관계 확인
+        if (room.getRoomType() == ChatRoom.RoomType.DIRECT) {
+            Long otherUserId = room.getOtherUser(userId).getId();
+            // 내가 상대를 차단했거나, 상대가 나를 차단한 경우
+            if (userBlockRepository.existsByBlockerIdAndBlockedUserId(userId, otherUserId) ||
+                userBlockRepository.existsByBlockerIdAndBlockedUserId(otherUserId, userId)) {
+                throw new CustomException("차단된 사용자와는 채팅할 수 없습니다", HttpStatus.FORBIDDEN, "BLOCKED_USER");
+            }
+        }
 
         long unreadCount = chatMessageRepository.countUnreadMessages(room, user);
         return ChatDto.RoomResponse.from(room, user, unreadCount);
