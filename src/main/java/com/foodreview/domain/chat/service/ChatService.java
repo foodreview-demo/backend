@@ -619,6 +619,28 @@ public class ChatService {
         }
     }
 
+    // 메시지 삭제
+    @Transactional
+    public void deleteMessage(Long userId, String roomUuid, Long messageId) {
+        ChatRoom room = findChatRoomByUuid(roomUuid);
+        validateChatRoomParticipant(room, userId);
+
+        ChatMessage message = chatMessageRepository.findById(messageId)
+                .orElseThrow(() -> new CustomException("메시지를 찾을 수 없습니다", HttpStatus.NOT_FOUND));
+
+        // 본인 메시지만 삭제 가능
+        if (message.getSender() == null || !message.getSender().getId().equals(userId)) {
+            throw new CustomException("본인 메시지만 삭제할 수 있습니다", HttpStatus.FORBIDDEN);
+        }
+
+        // 해당 채팅방의 메시지인지 확인
+        if (!message.getChatRoom().getId().equals(room.getId())) {
+            throw new CustomException("해당 채팅방의 메시지가 아닙니다", HttpStatus.BAD_REQUEST);
+        }
+
+        chatMessageRepository.delete(message);
+    }
+
     private User findUserById(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException("사용자를 찾을 수 없습니다", HttpStatus.NOT_FOUND, "USER_NOT_FOUND"));

@@ -4,6 +4,7 @@ import com.foodreview.domain.chat.entity.ChatRoom;
 import com.foodreview.domain.chat.repository.ChatRoomRepository;
 import com.foodreview.domain.report.dto.ChatReportDto;
 import com.foodreview.domain.report.entity.ChatReport;
+import com.foodreview.domain.report.entity.ReportStatus;
 import com.foodreview.domain.report.repository.ChatReportRepository;
 import com.foodreview.domain.user.entity.User;
 import com.foodreview.domain.user.repository.UserRepository;
@@ -45,10 +46,10 @@ public class ChatReportService {
             throw new CustomException("해당 채팅방의 멤버가 아닙니다", HttpStatus.FORBIDDEN);
         }
 
-        // 이미 같은 채팅방에서 같은 사용자를 신고했는지 확인
-        if (chatReportRepository.existsByReporterIdAndChatRoomIdAndReportedUserId(
-                reporterId, request.getChatRoomId(), request.getReportedUserId())) {
-            throw new CustomException("이미 신고한 사용자입니다", HttpStatus.CONFLICT);
+        // 이미 같은 채팅방에서 같은 사용자를 신고했는지 확인 (대기 중인 신고만 체크)
+        if (chatReportRepository.existsByReporterIdAndChatRoomIdAndReportedUserIdAndStatus(
+                reporterId, request.getChatRoomId(), request.getReportedUserId(), ReportStatus.PENDING)) {
+            throw new CustomException("이미 처리 대기 중인 신고가 있습니다", HttpStatus.CONFLICT);
         }
 
         ChatReport report = ChatReport.builder()

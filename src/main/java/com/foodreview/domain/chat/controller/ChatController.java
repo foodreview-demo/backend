@@ -168,4 +168,14 @@ public class ChatController {
         ChatReportDto.Response response = chatReportService.createReport(userDetails.getUserId(), request);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response, "신고가 접수되었습니다"));
     }
+
+    @Operation(summary = "메시지 삭제")
+    @DeleteMapping("/room/{roomUuid}/messages/{messageId}")
+    public ResponseEntity<ApiResponse<Void>> deleteMessage(
+            @CurrentUser CustomUserDetails userDetails,
+            @PathVariable String roomUuid,
+            @PathVariable Long messageId) {
+        chatService.deleteMessage(userDetails.getUserId(), roomUuid, messageId);
+        return ResponseEntity.ok(ApiResponse.success(null, "메시지가 삭제되었습니다"));
+    }
 }
