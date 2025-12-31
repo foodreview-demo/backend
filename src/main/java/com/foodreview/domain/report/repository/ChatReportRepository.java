@@ -10,7 +10,9 @@ import org.springframework.data.repository.query.Param;
 
 public interface ChatReportRepository extends JpaRepository<ChatReport, Long> {
 
-    boolean existsByReporterIdAndChatRoomIdAndReportedUserId(Long reporterId, Long chatRoomId, Long reportedUserId);
+    // PENDING 상태의 신고만 체크 (처리 완료된 신고는 다시 신고 가능)
+    boolean existsByReporterIdAndChatRoomIdAndReportedUserIdAndStatus(
+            Long reporterId, Long chatRoomId, Long reportedUserId, ReportStatus status);
 
     Page<ChatReport> findByStatus(ReportStatus status, Pageable pageable);
 
