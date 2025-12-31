@@ -78,6 +78,10 @@ public class Review extends BaseTimeEntity {
     @Builder.Default
     private Boolean isFirstReview = false;
 
+    // 영수증 인증 이미지 URL (신규 리뷰는 필수, 기존 리뷰는 null 가능)
+    @Column(name = "receipt_image_url", length = 500)
+    private String receiptImageUrl;
+
     // 공감 수 증가
     public void addSympathy() {
         this.sympathyCount++;
@@ -93,7 +97,8 @@ public class Review extends BaseTimeEntity {
     // 리뷰 수정
     public void update(String content, BigDecimal rating, BigDecimal tasteRating, BigDecimal priceRating,
                        BigDecimal atmosphereRating, BigDecimal serviceRating,
-                       List<String> images, String menu, String price, LocalDate visitDate) {
+                       List<String> images, String menu, String price, LocalDate visitDate,
+                       String receiptImageUrl) {
         if (content != null) this.content = content;
         if (rating != null) this.rating = rating;
         if (tasteRating != null) this.tasteRating = tasteRating;
@@ -104,5 +109,6 @@ public class Review extends BaseTimeEntity {
         if (menu != null) this.menu = menu;
         if (price != null) this.price = price;
         if (visitDate != null) this.visitDate = visitDate;
+        if (receiptImageUrl != null) this.receiptImageUrl = receiptImageUrl;
     }
 }

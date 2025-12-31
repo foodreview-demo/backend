@@ -7,9 +7,7 @@ import com.foodreview.domain.user.entity.User;
 import com.foodreview.domain.user.repository.UserRepository;
 import com.foodreview.global.exception.CustomException;
 import com.foodreview.global.security.jwt.JwtTokenProvider;
-import com.foodreview.global.util.MaskingUtil;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -17,7 +15,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -65,8 +62,6 @@ public class AuthService {
         // Refresh Token 생성 및 DB 저장
         String refreshToken = refreshTokenService.createRefreshToken(user, deviceId, userAgent, ipAddress);
 
-        log.info("User logged in: {}, device: {}", MaskingUtil.maskUserId(user.getId()), deviceId);
-
         return AuthDto.TokenResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
@@ -85,8 +80,6 @@ public class AuthService {
         // 새 Access Token 발급
         String accessToken = jwtTokenProvider.createAccessToken(user.getEmail());
 
-        log.debug("Token refreshed for user: {}", user.getEmail());
-
         return AuthDto.TokenResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(newRefreshToken.getToken())
@@ -102,11 +95,9 @@ public class AuthService {
         if (allDevices) {
             // 모든 기기에서 로그아웃
             refreshTokenService.revokeAllUserTokens(user);
-            log.info("User logged out from all devices: {}", MaskingUtil.maskUserId(user.getId()));
         } else {
             // 현재 기기만 로그아웃
             refreshTokenService.revokeToken(refreshToken);
-            log.info("User logged out from current device: {}", MaskingUtil.maskUserId(user.getId()));
         }
     }
 }

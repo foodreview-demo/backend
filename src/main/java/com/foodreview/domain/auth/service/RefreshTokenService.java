@@ -62,7 +62,6 @@ public class RefreshTokenService {
 
         refreshTokenRepository.save(refreshToken);
 
-        log.debug("Refresh token created for user: {}, device: {}", user.getEmail(), deviceId);
         return token;
     }
 
@@ -127,8 +126,7 @@ public class RefreshTokenService {
      */
     @Transactional
     public void revokeAllUserTokens(User user) {
-        int count = refreshTokenRepository.revokeAllByUser(user);
-        log.info("Revoked {} refresh tokens for user: {}", count, user.getEmail());
+        refreshTokenRepository.revokeAllByUser(user);
     }
 
     /**
@@ -137,7 +135,6 @@ public class RefreshTokenService {
     @Transactional
     public void revokeByDeviceId(User user, String deviceId) {
         refreshTokenRepository.revokeByUserAndDeviceId(user, deviceId);
-        log.info("Revoked refresh token for user: {}, device: {}", user.getEmail(), deviceId);
     }
 
     /**
@@ -154,8 +151,7 @@ public class RefreshTokenService {
     @Scheduled(cron = "0 0 3 * * *")
     @Transactional
     public void cleanupExpiredTokens() {
-        int deleted = refreshTokenRepository.deleteExpiredAndRevoked(LocalDateTime.now());
-        log.info("Cleaned up {} expired/revoked refresh tokens", deleted);
+        refreshTokenRepository.deleteExpiredAndRevoked(LocalDateTime.now());
     }
 
     /**

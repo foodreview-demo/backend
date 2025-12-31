@@ -29,8 +29,6 @@ public class ChatWebSocketController {
             @Payload ChatDto.WebSocketMessage message,
             @Header("userId") Long userId) {
 
-        log.info("WebSocket 메시지 수신: roomUuid={}, userId={}, content={}", roomUuid, userId, message.getContent());
-
         try {
             // 메시지 저장 및 수신자 ID 목록 조회
             ChatService.SendMessageResult result = chatService.sendMessageByUuidWithRecipient(userId, roomUuid, message.getContent());
@@ -43,8 +41,6 @@ public class ChatWebSocketController {
                 messagingTemplate.convertAndSend("/topic/user/" + recipientId + "/notification",
                         new ChatDto.NewMessageNotification(roomUuid, result.getMessageResponse()));
             }
-
-            log.info("메시지 브로드캐스트 완료: roomUuid={}, recipientIds={}", roomUuid, result.getRecipientIds());
         } catch (Exception e) {
             log.error("메시지 전송 실패: roomUuid={}, error={}", roomUuid, e.getMessage());
         }
@@ -59,8 +55,6 @@ public class ChatWebSocketController {
             @DestinationVariable String roomUuid,
             @Header("userId") Long userId) {
 
-        log.info("읽음 알림 수신: roomUuid={}, userId={}", roomUuid, userId);
-
         try {
             // 메시지 읽음 처리 및 다른 멤버 ID 목록 조회
             ChatService.MarkAsReadResult result = chatService.markMessagesAsReadAndGetOtherUsers(userId, roomUuid);
@@ -73,9 +67,6 @@ public class ChatWebSocketController {
                     result.getLastReadCount()
             );
             messagingTemplate.convertAndSend("/topic/chat/" + roomUuid + "/read", notification);
-
-            log.info("읽음 알림 전송 완료: roomUuid={}, readByUserId={}, lastReadMessageId={}, readCount={}",
-                    roomUuid, userId, result.getLastReadMessageId(), result.getLastReadCount());
         } catch (Exception e) {
             log.error("읽음 알림 전송 실패: roomUuid={}, error={}", roomUuid, e.getMessage());
         }
