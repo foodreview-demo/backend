@@ -146,4 +146,25 @@ public class UserDto {
                     .build();
         }
     }
+
+    @Getter
+    @Builder
+    @AllArgsConstructor
+    public static class BlockedUserResponse {
+        private Long id;
+        private String name;
+        private String avatar;
+        private String tasteGrade;
+        private java.time.LocalDateTime blockedAt;
+
+        public static BlockedUserResponse from(User user, java.time.LocalDateTime blockedAt) {
+            return BlockedUserResponse.builder()
+                    .id(user.getId())
+                    .name(user.getName())
+                    .avatar(user.getAvatar())
+                    .tasteGrade(user.getTasteGrade())
+                    .blockedAt(blockedAt)
+                    .build();
+        }
+    }
 }

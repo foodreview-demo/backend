@@ -4,8 +4,10 @@ import com.foodreview.domain.user.dto.ScoreEventDto;
 import com.foodreview.domain.user.dto.UserDto;
 import com.foodreview.domain.user.entity.Follow;
 import com.foodreview.domain.user.entity.User;
+import com.foodreview.domain.user.entity.UserBlock;
 import com.foodreview.domain.user.repository.FollowRepository;
 import com.foodreview.domain.user.repository.ScoreEventRepository;
+import com.foodreview.domain.user.repository.UserBlockRepository;
 import com.foodreview.domain.user.repository.UserRepository;
 import com.foodreview.global.common.PageResponse;
 import com.foodreview.global.exception.CustomException;
@@ -31,6 +33,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final FollowRepository followRepository;
     private final ScoreEventRepository scoreEventRepository;
+    private final UserBlockRepository userBlockRepository;
 
     public UserDto.Response getUser(Long userId) {
         User user = findUserById(userId);
@@ -180,6 +183,80 @@ public class UserService {
     // 팔로우 여부 확인 (단일 쿼리로 최적화)
     public boolean isFollowing(Long followerId, Long followingId) {
         return followRepository.existsByFollowerIdAndFollowingId(followerId, followingId);
+    }
+
+    // 사용자 차단
+    @Transactional
+    public void blockUser(Long blockerId, Long blockedUserId) {
+        if (blockerId.equals(blockedUserId)) {
+            throw new CustomException("자기 자신을 차단할 수 없습니다", HttpStatus.BAD_REQUEST);
+        }
+
+        User blocker = findUserById(blockerId);
+        User blockedUser = findUserById(blockedUserId);
+
+        if (userBlockRepository.existsByBlockerAndBlockedUser(blocker, blockedUser)) {
+            throw new CustomException("이미 차단한 사용자입니다", HttpStatus.CONFLICT);
+        }
+
+        UserBlock userBlock = UserBlock.builder()
+                .blocker(blocker)
+                .blockedUser(blockedUser)
+                .build();
+
+        userBlockRepository.save(userBlock);
+
+        // 팔로우 관계가 있으면 해제
+        followRepository.findByFollowerAndFollowing(blocker, blockedUser)
+                .ifPresent(followRepository::delete);
+        followRepository.findByFollowerAndFollowing(blockedUser, blocker)
+                .ifPresent(followRepository::delete);
+    }
+
+    // 사용자 차단 해제
+    @Transactional
+    public void unblockUser(Long blockerId, Long blockedUserId) {
+        User blocker = findUserById(blockerId);
+        User blockedUser = findUserById(blockedUserId);
+
+        UserBlock userBlock = userBlockRepository.findByBlockerAndBlockedUser(blocker, blockedUser)
+                .orElseThrow(() -> new CustomException("차단 관계가 없습니다", HttpStatus.NOT_FOUND));
+
+        userBlockRepository.delete(userBlock);
+    }
+
+    // 차단 목록 조회
+    public PageResponse<UserDto.BlockedUserResponse> getBlockedUsers(Long userId, Pageable pageable) {
+        User user = findUserById(userId);
+        Page<User> blockedUsers = userBlockRepository.findBlockedUsersByBlocker(user, pageable);
+
+        // 차단 시점 정보를 위해 UserBlock 엔티티도 조회
+        List<Long> blockedUserIds = blockedUsers.getContent().stream().map(User::getId).toList();
+        List<UserBlock> blocks = userBlockRepository.findAll().stream()
+                .filter(ub -> ub.getBlocker().getId().equals(userId) && blockedUserIds.contains(ub.getBlockedUser().getId()))
+                .toList();
+
+        List<UserDto.BlockedUserResponse> content = blockedUsers.getContent().stream()
+                .map(blockedUser -> {
+                    var block = blocks.stream()
+                            .filter(ub -> ub.getBlockedUser().getId().equals(blockedUser.getId()))
+                            .findFirst()
+                            .orElse(null);
+                    return UserDto.BlockedUserResponse.from(blockedUser, block != null ? block.getCreatedAt() : null);
+                })
+                .toList();
+
+        return PageResponse.from(blockedUsers, content);
+    }
+
+    // 차단 여부 확인
+    public boolean isBlocked(Long blockerId, Long blockedUserId) {
+        return userBlockRepository.existsByBlockerIdAndBlockedUserId(blockerId, blockedUserId);
+    }
+
+    // 차단된 사용자 ID 목록 조회 (필터링용)
+    public List<Long> getBlockedUserIds(Long userId) {
+        return userBlockRepository.findBlockedUserIdsByBlockerId(userId);
     }
 
     private User findUserById(Long userId) {

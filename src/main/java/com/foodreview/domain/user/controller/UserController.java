@@ -139,4 +139,40 @@ public class UserController {
         ReviewDto.InfluenceStats response = reviewService.getInfluenceStats(userId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
+
+    @Operation(summary = "사용자 차단")
+    @PostMapping("/{userId}/block")
+    public ResponseEntity<ApiResponse<Void>> blockUser(
+            @CurrentUser CustomUserDetails userDetails,
+            @PathVariable Long userId) {
+        userService.blockUser(userDetails.getUserId(), userId);
+        return ResponseEntity.ok(ApiResponse.success(null, "사용자를 차단했습니다"));
+    }
+
+    @Operation(summary = "사용자 차단 해제")
+    @DeleteMapping("/{userId}/block")
+    public ResponseEntity<ApiResponse<Void>> unblockUser(
+            @CurrentUser CustomUserDetails userDetails,
+            @PathVariable Long userId) {
+        userService.unblockUser(userDetails.getUserId(), userId);
+        return ResponseEntity.ok(ApiResponse.success(null, "차단을 해제했습니다"));
+    }
+
+    @Operation(summary = "차단 목록 조회")
+    @GetMapping("/blocked")
+    public ResponseEntity<ApiResponse<PageResponse<UserDto.BlockedUserResponse>>> getBlockedUsers(
+            @CurrentUser CustomUserDetails userDetails,
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        PageResponse<UserDto.BlockedUserResponse> response = userService.getBlockedUsers(userDetails.getUserId(), pageable);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(summary = "차단 여부 확인")
+    @GetMapping("/{userId}/is-blocked")
+    public ResponseEntity<ApiResponse<Boolean>> isBlocked(
+            @CurrentUser CustomUserDetails userDetails,
+            @PathVariable Long userId) {
+        boolean isBlocked = userService.isBlocked(userDetails.getUserId(), userId);
+        return ResponseEntity.ok(ApiResponse.success(isBlocked));
+    }
 }

@@ -14,6 +14,7 @@ import com.foodreview.domain.review.repository.SympathyRepository;
 import com.foodreview.domain.user.entity.ScoreEvent;
 import com.foodreview.domain.user.entity.User;
 import com.foodreview.domain.user.repository.ScoreEventRepository;
+import com.foodreview.domain.user.repository.UserBlockRepository;
 import com.foodreview.domain.user.repository.UserRepository;
 import com.foodreview.global.common.PageResponse;
 import com.foodreview.global.exception.CustomException;
@@ -45,6 +46,7 @@ public class ReviewService {
     private final SympathyRepository sympathyRepository;
     private final ScoreEventRepository scoreEventRepository;
     private final ReviewReferenceRepository reviewReferenceRepository;
+    private final UserBlockRepository userBlockRepository;
     private final NotificationService notificationService;
 
     private static final int FIRST_REVIEW_POINTS = 100;
@@ -133,7 +135,8 @@ public class ReviewService {
         }
 
         Set<Long> sympathizedReviewIds = getSympathizedReviewIds(currentUserId);
-        List<ReviewDto.Response> content = convertToResponseDtos(reviews.getContent(), sympathizedReviewIds);
+        Set<Long> blockedUserIds = getBlockedUserIds(currentUserId);
+        List<ReviewDto.Response> content = convertToResponseDtos(reviews.getContent(), sympathizedReviewIds, blockedUserIds);
 
         return PageResponse.from(reviews, content);
     }
@@ -160,7 +163,8 @@ public class ReviewService {
         Page<Review> reviews = reviewRepository.findByRestaurantOrderByCreatedAtDesc(restaurant, pageable);
 
         Set<Long> sympathizedReviewIds = getSympathizedReviewIds(currentUserId);
-        List<ReviewDto.Response> content = convertToResponseDtos(reviews.getContent(), sympathizedReviewIds);
+        Set<Long> blockedUserIds = getBlockedUserIds(currentUserId);
+        List<ReviewDto.Response> content = convertToResponseDtos(reviews.getContent(), sympathizedReviewIds, blockedUserIds);
 
         return PageResponse.from(reviews, content);
     }
@@ -171,7 +175,8 @@ public class ReviewService {
         Page<Review> reviews = reviewRepository.findByUserOrderByCreatedAtDesc(user, pageable);
 
         Set<Long> sympathizedReviewIds = getSympathizedReviewIds(currentUserId);
-        List<ReviewDto.Response> content = convertToResponseDtos(reviews.getContent(), sympathizedReviewIds);
+        Set<Long> blockedUserIds = getBlockedUserIds(currentUserId);
+        List<ReviewDto.Response> content = convertToResponseDtos(reviews.getContent(), sympathizedReviewIds, blockedUserIds);
 
         return PageResponse.from(reviews, content);
     }
@@ -479,8 +484,13 @@ public class ReviewService {
         return new HashSet<>(sympathyRepository.findReviewIdsByUserId(userId));
     }
 
+    private Set<Long> getBlockedUserIds(Long userId) {
+        if (userId == null) return new HashSet<>();
+        return new HashSet<>(userBlockRepository.findBlockedUserIdsByBlockerId(userId));
+    }
+
     // 리뷰 목록을 DTO로 변환 (배치 쿼리로 N+1 방지)
-    private List<ReviewDto.Response> convertToResponseDtos(List<Review> reviews, Set<Long> sympathizedReviewIds) {
+    private List<ReviewDto.Response> convertToResponseDtos(List<Review> reviews, Set<Long> sympathizedReviewIds, Set<Long> blockedUserIds) {
         if (reviews.isEmpty()) {
             return List.of();
         }
@@ -501,6 +511,7 @@ public class ReviewService {
                 ));
 
         return reviews.stream()
+                .filter(review -> !blockedUserIds.contains(review.getUser().getId()))
                 .map(review -> {
                     ReviewDto.ReferenceInfo referenceInfo = null;
                     ReviewReference reference = referenceMap.get(review.getId());

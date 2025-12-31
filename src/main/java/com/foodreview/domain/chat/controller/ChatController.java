@@ -2,6 +2,8 @@ package com.foodreview.domain.chat.controller;
 
 import com.foodreview.domain.chat.dto.ChatDto;
 import com.foodreview.domain.chat.service.ChatService;
+import com.foodreview.domain.report.dto.ChatReportDto;
+import com.foodreview.domain.report.service.ChatReportService;
 import com.foodreview.global.common.ApiResponse;
 import com.foodreview.global.common.PageResponse;
 import com.foodreview.global.security.CurrentUser;
@@ -26,6 +28,7 @@ import java.util.List;
 public class ChatController {
 
     private final ChatService chatService;
+    private final ChatReportService chatReportService;
 
     @Operation(summary = "채팅방 목록 조회")
     @GetMapping("/rooms")
@@ -155,5 +158,14 @@ public class ChatController {
             @PathVariable String roomUuid) {
         List<ChatDto.MemberResponse> response = chatService.getRoomMembers(userDetails.getUserId(), roomUuid);
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(summary = "채팅 신고")
+    @PostMapping("/reports")
+    public ResponseEntity<ApiResponse<ChatReportDto.Response>> reportChat(
+            @CurrentUser CustomUserDetails userDetails,
+            @Valid @RequestBody ChatReportDto.CreateRequest request) {
+        ChatReportDto.Response response = chatReportService.createReport(userDetails.getUserId(), request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response, "신고가 접수되었습니다"));
     }
 }
