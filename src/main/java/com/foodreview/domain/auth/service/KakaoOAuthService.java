@@ -7,7 +7,6 @@ import com.foodreview.domain.user.entity.User;
 import com.foodreview.domain.user.repository.UserRepository;
 import com.foodreview.global.exception.CustomException;
 import com.foodreview.global.security.jwt.JwtTokenProvider;
-import com.foodreview.global.util.MaskingUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -61,8 +60,6 @@ public class KakaoOAuthService {
         // 5. Refresh Token 생성 및 DB 저장
         String refreshToken = refreshTokenService.createRefreshToken(user, deviceId, userAgent, ipAddress);
 
-        log.info("카카오 로그인 완료: {}, device: {}", MaskingUtil.maskUserId(user.getId()), deviceId);
-
         return AuthDto.TokenResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
@@ -98,20 +95,6 @@ public class KakaoOAuthService {
                     .bodyToMono(KakaoOAuthDto.UserInfoResponse.class)
                     .block();
 
-            // 디버그 로그 (민감정보 마스킹)
-            log.debug("카카오 사용자 정보: id={}", response.getId());
-            if (response.getKakaoAccount() != null) {
-                KakaoOAuthDto.KakaoAccount account = response.getKakaoAccount();
-                log.debug("카카오 계정: email={}", MaskingUtil.maskEmail(account.getEmail()));
-                if (account.getProfile() != null) {
-                    log.debug("카카오 프로필: nickname={}", MaskingUtil.maskName(account.getProfile().getNickname()));
-                } else {
-                    log.warn("카카오 프로필이 null입니다");
-                }
-            } else {
-                log.warn("카카오 계정 정보가 null입니다");
-            }
-
             return response;
         } catch (Exception e) {
             log.error("카카오 사용자 정보 요청 실패", e);
@@ -145,7 +128,6 @@ public class KakaoOAuthService {
         // 1. providerId로 기존 카카오 연동 사용자 조회 (프로필 동기화 안함 - 최초 가입 시에만 적용)
         Optional<User> existingKakaoUser = userRepository.findByProviderAndProviderId(AuthProvider.KAKAO, kakaoId);
         if (existingKakaoUser.isPresent()) {
-            log.info("기존 카카오 연동 사용자 로그인: {}", MaskingUtil.maskUserId(existingKakaoUser.get().getId()));
             return existingKakaoUser.get();
         }
 
@@ -155,7 +137,6 @@ public class KakaoOAuthService {
             if (existingUserByEmail.isPresent()) {
                 User existingUser = existingUserByEmail.get();
                 existingUser.linkKakaoAccount(kakaoId, name, avatar);
-                log.info("기존 회원에 카카오 계정 연동 완료: {}", MaskingUtil.maskUserId(existingUser.getId()));
                 return existingUser;
             }
         }
@@ -177,7 +158,6 @@ public class KakaoOAuthService {
                 .build();
 
         User savedUser = userRepository.save(newUser);
-        log.info("카카오 신규 회원가입 완료: {}", MaskingUtil.maskUserId(savedUser.getId()));
         return savedUser;
     }
 }

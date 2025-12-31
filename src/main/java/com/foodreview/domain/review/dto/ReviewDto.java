@@ -34,6 +34,8 @@ public class ReviewDto {
         private Integer sympathyCount;
         private Boolean isFirstReview;
         private Boolean hasSympathized;
+        // 영수증 인증 이미지
+        private String receiptImageUrl;
         // 참고 정보
         private ReferenceInfo referenceInfo;
         private Integer referenceCount; // 이 리뷰를 참고한 횟수
@@ -61,6 +63,7 @@ public class ReviewDto {
                     .sympathyCount(review.getSympathyCount())
                     .isFirstReview(review.getIsFirstReview())
                     .hasSympathized(hasSympathized)
+                    .receiptImageUrl(review.getReceiptImageUrl())
                     .referenceInfo(referenceInfo)
                     .referenceCount(referenceCount)
                     .build();
@@ -135,6 +138,9 @@ public class ReviewDto {
 
         private LocalDate visitDate;
 
+        // 영수증 인증 이미지 URL (선택)
+        private String receiptImageUrl;
+
         // 참고한 리뷰 ID (선택)
         private Long referenceReviewId;
     }
@@ -171,6 +177,9 @@ public class ReviewDto {
         private String menu;
         private String price;
         private LocalDate visitDate;
+
+        // 영수증 인증 이미지 URL
+        private String receiptImageUrl;
     }
 
     @Getter

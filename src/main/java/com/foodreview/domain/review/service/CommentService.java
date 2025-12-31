@@ -11,14 +11,12 @@ import com.foodreview.domain.user.entity.User;
 import com.foodreview.domain.user.repository.UserRepository;
 import com.foodreview.global.exception.CustomException;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -64,7 +62,6 @@ public class CommentService {
                 .build();
 
         Comment savedComment = commentRepository.save(comment);
-        log.debug("Comment created: reviewId={}, commentId={}, userId={}", reviewId, savedComment.getId(), user.getId());
 
         // 알림 생성
         if (parent != null) {
@@ -174,11 +171,9 @@ public class CommentService {
         if (replyCount > 0) {
             // 대댓글이 있으면 소프트 삭제 (내용만 변경)
             comment.softDelete();
-            log.debug("Comment soft deleted: commentId={}, userId={}", commentId, user.getId());
         } else {
             // 대댓글이 없으면 실제 삭제
             commentRepository.delete(comment);
-            log.debug("Comment hard deleted: commentId={}, userId={}", commentId, user.getId());
         }
     }
 

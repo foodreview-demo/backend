@@ -78,20 +78,27 @@ public class HtmlSanitizer {
      * 채팅 메시지용 새니타이저
      *
      * 기본 텍스트만 허용하고 HTML/스크립트 모두 제거
+     * 단, 줄바꿈(\n)은 보존 (답장 기능에서 사용)
      */
     public static String sanitizeChatMessage(String message) {
         if (message == null || message.isEmpty()) {
             return message;
         }
 
-        // 1. 모든 HTML 태그 제거
-        String result = stripAllTags(message);
+        // 1. 줄바꿈 보존을 위해 임시 치환
+        String result = message.replace("\n", "{{NEWLINE}}");
 
-        // 2. HTML 특수문자 이스케이프
-        result = sanitize(result);
+        // 2. 모든 HTML 태그 제거
+        result = stripAllTags(result);
 
-        // 3. 앞뒤 공백 제거 및 연속 공백 정리
-        result = result.trim().replaceAll("\\s+", " ");
+        // 3. 스크립트 태그 제거
+        result = removeScriptTags(result);
+
+        // 4. 줄바꿈 복원
+        result = result.replace("{{NEWLINE}}", "\n");
+
+        // 5. 앞뒤 공백 제거 (줄바꿈은 유지)
+        result = result.trim();
 
         return result;
     }

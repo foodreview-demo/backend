@@ -211,6 +211,7 @@ public class ReviewService {
                 .price(request.getPrice())
                 .visitDate(request.getVisitDate())
                 .isFirstReview(isFirstReview)
+                .receiptImageUrl(request.getReceiptImageUrl())
                 .build();
 
         Review savedReview = reviewRepository.save(review);
@@ -335,7 +336,8 @@ public class ReviewService {
                 request.getImages(),
                 request.getMenu(),
                 request.getPrice(),
-                request.getVisitDate()
+                request.getVisitDate(),
+                request.getReceiptImageUrl()
         );
 
         return ReviewDto.Response.from(review, false);
