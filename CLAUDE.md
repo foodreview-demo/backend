@@ -129,12 +129,21 @@ npx cap open android       # Android Studio 열기
 ## Admin System
 
 - Dashboard: `/api/admin/stats`
-- Reports: `/api/admin/reports`, `/api/admin/chat-reports`
-- 대시보드에 대기 중 신고 수 표시
+- 리뷰 신고: `/api/admin/reports`
+- 채팅 신고: `/api/admin/chat-reports`
+- 영수증 검토: `/api/admin/reviews/receipts/pending`
+- 대시보드에 대기 중 신고 수, 검토 대기 영수증 수 표시
+
+### 신고 사유 (ReportReason)
+- SPAM, INAPPROPRIATE, FAKE_REVIEW, NO_RECEIPT, HARASSMENT, COPYRIGHT, OTHER
 
 ### 영수증 인증 시스템
 - 리뷰 작성 시 영수증 사진 첨부 가능 (선택)
-- 영수증 첨부 시 "인증됨" 배지 표시
+- 영수증 첨부 시 `PENDING_REVIEW` 상태로 설정
+- Admin이 영수증 검토 페이지에서 승인/거부
+  - 승인: `MANUALLY_APPROVED` → "인증됨" 배지 표시
+  - 거부: `MANUALLY_REJECTED` → 배지 없음
 - 배지 클릭 시 영수증 모달로 확인 가능
 - 설정에서 "인증된 리뷰만 보기" 필터 지원
+- `ReceiptVerificationStatus`: NONE, PENDING_REVIEW, MANUALLY_APPROVED, MANUALLY_REJECTED
 - `lib/feed-settings-context.tsx`: 피드 설정 Context (localStorage 저장)
