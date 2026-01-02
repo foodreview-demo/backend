@@ -5,6 +5,7 @@ import com.foodreview.domain.notification.service.NotificationService;
 import com.foodreview.domain.restaurant.entity.Restaurant;
 import com.foodreview.domain.restaurant.repository.RestaurantRepository;
 import com.foodreview.domain.review.dto.ReviewDto;
+import com.foodreview.domain.review.entity.ReceiptVerificationStatus;
 import com.foodreview.domain.review.entity.Review;
 import com.foodreview.domain.review.entity.ReviewReference;
 import com.foodreview.domain.review.entity.Sympathy;
@@ -20,6 +21,7 @@ import com.foodreview.global.common.PageResponse;
 import com.foodreview.global.exception.CustomException;
 import com.foodreview.global.util.HtmlSanitizer;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -38,6 +40,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@Slf4j
 public class ReviewService {
 
     private final ReviewRepository reviewRepository;
@@ -215,6 +218,13 @@ public class ReviewService {
                 .build();
 
         Review savedReview = reviewRepository.save(review);
+
+        // 영수증 이미지가 있는 경우 Admin 수동 검토 대기 상태로 설정
+        if (request.getReceiptImageUrl() != null && !request.getReceiptImageUrl().isBlank()) {
+            savedReview.updateReceiptVerification(ReceiptVerificationStatus.PENDING_REVIEW, null, null);
+            reviewRepository.save(savedReview);
+            log.info("영수증 수동 검토 대기 설정. reviewId: {}", savedReview.getId());
+        }
 
         // 음식점 평점 업데이트
         restaurant.addReview(request.getRating());
@@ -542,5 +552,39 @@ public class ReviewService {
     private Restaurant findRestaurantById(Long restaurantId) {
         return restaurantRepository.findById(restaurantId)
                 .orElseThrow(() -> new CustomException("음식점을 찾을 수 없습니다", HttpStatus.NOT_FOUND, "RESTAURANT_NOT_FOUND"));
+    }
+
+    /**
+     * 영수증 수동 승인 (Admin용)
+     */
+    @Transactional
+    public void approveReceiptManually(Long reviewId) {
+        Review review = findReviewById(reviewId);
+        review.approveReceiptManually();
+        log.info("영수증 수동 승인. reviewId: {}", reviewId);
+    }
+
+    /**
+     * 영수증 수동 거부 (Admin용)
+     */
+    @Transactional
+    public void rejectReceiptManually(Long reviewId) {
+        Review review = findReviewById(reviewId);
+        review.rejectReceiptManually();
+        log.info("영수증 수동 거부. reviewId: {}", reviewId);
+    }
+
+    /**
+     * 수동 검토 대기 중인 리뷰 목록 조회 (Admin용)
+     */
+    public PageResponse<ReviewDto.Response> getPendingReceiptReviews(Pageable pageable) {
+        Page<Review> reviews = reviewRepository.findByReceiptVerificationStatus(
+                ReceiptVerificationStatus.PENDING_REVIEW, pageable);
+
+        List<ReviewDto.Response> content = reviews.getContent().stream()
+                .map(review -> ReviewDto.Response.from(review, false))
+                .toList();
+
+        return PageResponse.from(reviews, content);
     }
 }

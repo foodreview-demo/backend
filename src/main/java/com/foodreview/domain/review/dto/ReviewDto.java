@@ -1,6 +1,7 @@
 package com.foodreview.domain.review.dto;
 
 import com.foodreview.domain.restaurant.dto.RestaurantDto;
+import com.foodreview.domain.review.entity.ReceiptVerificationStatus;
 import com.foodreview.domain.review.entity.Review;
 import com.foodreview.domain.user.dto.UserDto;
 import jakarta.validation.constraints.*;
@@ -36,6 +37,10 @@ public class ReviewDto {
         private Boolean hasSympathized;
         // 영수증 인증 이미지
         private String receiptImageUrl;
+        // 영수증 검증 상태
+        private ReceiptVerificationStatus receiptVerificationStatus;
+        // 영수증이 실제로 인증되었는지 (VERIFIED 또는 MANUALLY_APPROVED)
+        private Boolean isReceiptVerified;
         // 참고 정보
         private ReferenceInfo referenceInfo;
         private Integer referenceCount; // 이 리뷰를 참고한 횟수
@@ -64,6 +69,8 @@ public class ReviewDto {
                     .isFirstReview(review.getIsFirstReview())
                     .hasSympathized(hasSympathized)
                     .receiptImageUrl(review.getReceiptImageUrl())
+                    .receiptVerificationStatus(review.getReceiptVerificationStatus())
+                    .isReceiptVerified(review.isReceiptVerified())
                     .referenceInfo(referenceInfo)
                     .referenceCount(referenceCount)
                     .build();
