@@ -96,6 +96,12 @@ public class Review extends BaseTimeEntity {
     @Column(name = "receipt_ocr_text", length = 2000)
     private String receiptOcrText;
 
+    // 음식점을 알게 된 경로 (NONE, PASSING, FRIEND, REVIEW)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "reference_type", length = 20)
+    @Builder.Default
+    private ReferenceType referenceType = ReferenceType.NONE;
+
     // 공감 수 증가
     public void addSympathy() {
         this.sympathyCount++;
@@ -112,7 +118,7 @@ public class Review extends BaseTimeEntity {
     public void update(String content, BigDecimal rating, BigDecimal tasteRating, BigDecimal priceRating,
                        BigDecimal atmosphereRating, BigDecimal serviceRating,
                        List<String> images, String menu, String price, LocalDate visitDate,
-                       String receiptImageUrl) {
+                       String receiptImageUrl, ReferenceType referenceType) {
         if (content != null) this.content = content;
         if (rating != null) this.rating = rating;
         if (tasteRating != null) this.tasteRating = tasteRating;
@@ -124,6 +130,7 @@ public class Review extends BaseTimeEntity {
         if (price != null) this.price = price;
         if (visitDate != null) this.visitDate = visitDate;
         if (receiptImageUrl != null) this.receiptImageUrl = receiptImageUrl;
+        if (referenceType != null) this.referenceType = referenceType;
     }
 
     // 영수증 검증 결과 업데이트

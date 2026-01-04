@@ -40,21 +40,39 @@ public class RestaurantController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    @Operation(summary = "음식점 상세 조회")
-    @GetMapping("/{restaurantId}")
+    @Operation(summary = "음식점 상세 조회 (ID)")
+    @GetMapping("/{restaurantId:\\d+}")
     public ResponseEntity<ApiResponse<RestaurantDto.Response>> getRestaurant(@PathVariable Long restaurantId) {
         RestaurantDto.Response response = restaurantService.getRestaurant(restaurantId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    @Operation(summary = "음식점 리뷰 목록 조회")
-    @GetMapping("/{restaurantId}/reviews")
+    @Operation(summary = "음식점 상세 조회 (UUID)")
+    @GetMapping("/uuid/{uuid}")
+    public ResponseEntity<ApiResponse<RestaurantDto.Response>> getRestaurantByUuid(@PathVariable String uuid) {
+        RestaurantDto.Response response = restaurantService.getRestaurantByUuid(uuid);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(summary = "음식점 리뷰 목록 조회 (ID)")
+    @GetMapping("/{restaurantId:\\d+}/reviews")
     public ResponseEntity<ApiResponse<PageResponse<ReviewDto.Response>>> getRestaurantReviews(
             @PathVariable Long restaurantId,
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         Long currentUserId = userDetails != null ? userDetails.getUserId() : null;
         PageResponse<ReviewDto.Response> response = reviewService.getRestaurantReviews(restaurantId, currentUserId, pageable);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(summary = "음식점 리뷰 목록 조회 (UUID)")
+    @GetMapping("/uuid/{uuid}/reviews")
+    public ResponseEntity<ApiResponse<PageResponse<ReviewDto.Response>>> getRestaurantReviewsByUuid(
+            @PathVariable String uuid,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        Long currentUserId = userDetails != null ? userDetails.getUserId() : null;
+        PageResponse<ReviewDto.Response> response = reviewService.getRestaurantReviewsByUuid(uuid, currentUserId, pageable);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

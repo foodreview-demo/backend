@@ -6,6 +6,7 @@ import com.foodreview.domain.restaurant.entity.Restaurant;
 import com.foodreview.domain.restaurant.repository.RestaurantRepository;
 import com.foodreview.domain.review.dto.ReviewDto;
 import com.foodreview.domain.review.entity.ReceiptVerificationStatus;
+import com.foodreview.domain.review.entity.ReferenceType;
 import com.foodreview.domain.review.entity.Review;
 import com.foodreview.domain.review.entity.ReviewReference;
 import com.foodreview.domain.review.entity.Sympathy;
@@ -172,6 +173,18 @@ public class ReviewService {
         return PageResponse.from(reviews, content);
     }
 
+    // 음식점별 리뷰 조회 (UUID)
+    public PageResponse<ReviewDto.Response> getRestaurantReviewsByUuid(String restaurantUuid, Long currentUserId, Pageable pageable) {
+        Restaurant restaurant = findRestaurantByUuid(restaurantUuid);
+        Page<Review> reviews = reviewRepository.findByRestaurantOrderByCreatedAtDesc(restaurant, pageable);
+
+        Set<Long> sympathizedReviewIds = getSympathizedReviewIds(currentUserId);
+        Set<Long> blockedUserIds = getBlockedUserIds(currentUserId);
+        List<ReviewDto.Response> content = convertToResponseDtos(reviews.getContent(), sympathizedReviewIds, blockedUserIds);
+
+        return PageResponse.from(reviews, content);
+    }
+
     // 사용자별 리뷰 조회
     public PageResponse<ReviewDto.Response> getUserReviews(Long userId, Long currentUserId, Pageable pageable) {
         User user = findUserById(userId);
@@ -215,6 +228,7 @@ public class ReviewService {
                 .visitDate(request.getVisitDate())
                 .isFirstReview(isFirstReview)
                 .receiptImageUrl(request.getReceiptImageUrl())
+                .referenceType(request.getReferenceType() != null ? request.getReferenceType() : ReferenceType.NONE)
                 .build();
 
         Review savedReview = reviewRepository.save(review);
@@ -347,10 +361,32 @@ public class ReviewService {
                 request.getMenu(),
                 request.getPrice(),
                 request.getVisitDate(),
-                request.getReceiptImageUrl()
+                request.getReceiptImageUrl(),
+                request.getReferenceType()
         );
 
-        return ReviewDto.Response.from(review, false);
+        // referenceType이 REVIEW이고 referenceReviewId가 있으면 참고 리뷰 처리
+        ReviewDto.ReferenceInfo referenceInfo = null;
+        if (request.getReferenceType() == ReferenceType.REVIEW && request.getReferenceReviewId() != null) {
+            // 기존 참고 리뷰 삭제 후 새로 추가
+            reviewReferenceRepository.deleteByReview(review);
+            referenceInfo = processReferenceReview(review, review.getUser(), request.getReferenceReviewId());
+        } else if (request.getReferenceType() != null && request.getReferenceType() != ReferenceType.REVIEW) {
+            // REVIEW가 아닌 타입으로 변경 시 기존 참고 리뷰 삭제
+            reviewReferenceRepository.deleteByReview(review);
+        } else {
+            // 기존 참고 리뷰 정보 조회
+            Optional<ReviewReference> existingRef = reviewReferenceRepository.findByReview(review);
+            if (existingRef.isPresent()) {
+                referenceInfo = ReviewDto.ReferenceInfo.from(
+                        existingRef.get().getReferenceReview().getId(),
+                        existingRef.get().getReferenceUser()
+                );
+            }
+        }
+
+        int referenceCount = reviewReferenceRepository.countByReferenceReview(review);
+        return ReviewDto.Response.from(review, false, referenceInfo, referenceCount);
     }
 
     // 리뷰 삭제
@@ -551,6 +587,11 @@ public class ReviewService {
 
     private Restaurant findRestaurantById(Long restaurantId) {
         return restaurantRepository.findById(restaurantId)
+                .orElseThrow(() -> new CustomException("음식점을 찾을 수 없습니다", HttpStatus.NOT_FOUND, "RESTAURANT_NOT_FOUND"));
+    }
+
+    private Restaurant findRestaurantByUuid(String uuid) {
+        return restaurantRepository.findByUuid(uuid)
                 .orElseThrow(() -> new CustomException("음식점을 찾을 수 없습니다", HttpStatus.NOT_FOUND, "RESTAURANT_NOT_FOUND"));
     }
 
