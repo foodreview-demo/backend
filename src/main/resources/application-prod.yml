@@ -53,6 +53,10 @@ logging:
     com.foodreview: INFO
     org.hibernate.SQL: WARN
 
+# CORS Configuration
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS}
+
 # AWS S3 Configuration
 cloud:
   aws:
