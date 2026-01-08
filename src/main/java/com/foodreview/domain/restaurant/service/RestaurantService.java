@@ -26,6 +26,11 @@ public class RestaurantService {
         return RestaurantDto.Response.from(restaurant);
     }
 
+    public RestaurantDto.Response getRestaurantByUuid(String uuid) {
+        Restaurant restaurant = findRestaurantByUuid(uuid);
+        return RestaurantDto.Response.from(restaurant);
+    }
+
     public PageResponse<RestaurantDto.SimpleResponse> getRestaurants(
             String region, String district, String neighborhood, String category, Pageable pageable) {
         Page<Restaurant> restaurants;
@@ -136,6 +141,11 @@ public class RestaurantService {
 
     public Restaurant findRestaurantById(Long restaurantId) {
         return restaurantRepository.findById(restaurantId)
+                .orElseThrow(() -> new CustomException("음식점을 찾을 수 없습니다", HttpStatus.NOT_FOUND, "RESTAURANT_NOT_FOUND"));
+    }
+
+    public Restaurant findRestaurantByUuid(String uuid) {
+        return restaurantRepository.findByUuid(uuid)
                 .orElseThrow(() -> new CustomException("음식점을 찾을 수 없습니다", HttpStatus.NOT_FOUND, "RESTAURANT_NOT_FOUND"));
     }
 }

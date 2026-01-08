@@ -70,6 +70,23 @@ public class User extends BaseTimeEntity {
     @Column(name = "provider_id")
     private String providerId;
 
+    // 알림 설정
+    @Column(name = "notify_reviews", nullable = false)
+    @Builder.Default
+    private Boolean notifyReviews = true;
+
+    @Column(name = "notify_follows", nullable = false)
+    @Builder.Default
+    private Boolean notifyFollows = true;
+
+    @Column(name = "notify_messages", nullable = false)
+    @Builder.Default
+    private Boolean notifyMessages = true;
+
+    @Column(name = "notify_marketing", nullable = false)
+    @Builder.Default
+    private Boolean notifyMarketing = false;
+
     // 점수 추가
     public void addScore(int points) {
         this.tasteScore += points;
@@ -121,5 +138,14 @@ public class User extends BaseTimeEntity {
         if (tasteScore >= 1000) return "미식가";
         if (tasteScore >= 500) return "탐험가";
         return "입문자";
+    }
+
+    // 알림 설정 업데이트
+    public void updateNotificationSettings(Boolean notifyReviews, Boolean notifyFollows,
+                                           Boolean notifyMessages, Boolean notifyMarketing) {
+        if (notifyReviews != null) this.notifyReviews = notifyReviews;
+        if (notifyFollows != null) this.notifyFollows = notifyFollows;
+        if (notifyMessages != null) this.notifyMessages = notifyMessages;
+        if (notifyMarketing != null) this.notifyMarketing = notifyMarketing;
     }
 }

@@ -15,6 +15,9 @@ public interface ReviewReferenceRepository extends JpaRepository<ReviewReference
     // 특정 리뷰가 참고한 리뷰 조회
     Optional<ReviewReference> findByReview(Review review);
 
+    // 특정 리뷰의 참고 정보 삭제
+    void deleteByReview(Review review);
+
     // 여러 리뷰가 참고한 리뷰들을 배치로 조회 (N+1 방지)
     @Query("SELECT rr FROM ReviewReference rr " +
            "JOIN FETCH rr.referenceReview " +

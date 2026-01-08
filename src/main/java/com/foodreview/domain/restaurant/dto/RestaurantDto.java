@@ -14,6 +14,7 @@ public class RestaurantDto {
     @AllArgsConstructor
     public static class Response {
         private Long id;
+        private String uuid;
         private String name;
         private String category;
         private String categoryDisplay;
@@ -39,6 +40,7 @@ public class RestaurantDto {
         public static Response from(Restaurant restaurant) {
             return Response.builder()
                     .id(restaurant.getId())
+                    .uuid(restaurant.getUuid())
                     .name(restaurant.getName())
                     .category(restaurant.getCategory().name())
                     .categoryDisplay(restaurant.getCategory().getDisplayName())
@@ -69,6 +71,7 @@ public class RestaurantDto {
     @AllArgsConstructor
     public static class SimpleResponse {
         private Long id;
+        private String uuid;
         private String name;
         private String category;
         private String categoryDisplay;
@@ -83,6 +86,7 @@ public class RestaurantDto {
         public static SimpleResponse from(Restaurant restaurant) {
             return SimpleResponse.builder()
                     .id(restaurant.getId())
+                    .uuid(restaurant.getUuid())
                     .name(restaurant.getName())
                     .category(restaurant.getCategory().name())
                     .categoryDisplay(restaurant.getCategory().getDisplayName())

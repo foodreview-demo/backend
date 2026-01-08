@@ -175,4 +175,32 @@ public class UserController {
         boolean isBlocked = userService.isBlocked(userDetails.getUserId(), userId);
         return ResponseEntity.ok(ApiResponse.success(isBlocked));
     }
+
+    @Operation(summary = "사용자 검색")
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<PageResponse<UserDto.SearchResponse>>> searchUsers(
+            @RequestParam String query,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PageableDefault(size = 20, sort = "tasteScore", direction = Sort.Direction.DESC) Pageable pageable) {
+        Long currentUserId = userDetails != null ? userDetails.getUserId() : null;
+        PageResponse<UserDto.SearchResponse> response = userService.searchUsers(query, currentUserId, pageable);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(summary = "알림 설정 조회")
+    @GetMapping("/me/notifications")
+    public ResponseEntity<ApiResponse<UserDto.NotificationSettingsResponse>> getNotificationSettings(
+            @CurrentUser CustomUserDetails userDetails) {
+        UserDto.NotificationSettingsResponse response = userService.getNotificationSettings(userDetails.getUserId());
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(summary = "알림 설정 수정")
+    @PutMapping("/me/notifications")
+    public ResponseEntity<ApiResponse<UserDto.NotificationSettingsResponse>> updateNotificationSettings(
+            @CurrentUser CustomUserDetails userDetails,
+            @Valid @RequestBody UserDto.NotificationSettingsRequest request) {
+        UserDto.NotificationSettingsResponse response = userService.updateNotificationSettings(userDetails.getUserId(), request);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
 }

@@ -2,6 +2,7 @@ package com.foodreview.domain.review.dto;
 
 import com.foodreview.domain.restaurant.dto.RestaurantDto;
 import com.foodreview.domain.review.entity.ReceiptVerificationStatus;
+import com.foodreview.domain.review.entity.ReferenceType;
 import com.foodreview.domain.review.entity.Review;
 import com.foodreview.domain.user.dto.UserDto;
 import jakarta.validation.constraints.*;
@@ -41,7 +42,9 @@ public class ReviewDto {
         private ReceiptVerificationStatus receiptVerificationStatus;
         // 영수증이 실제로 인증되었는지 (VERIFIED 또는 MANUALLY_APPROVED)
         private Boolean isReceiptVerified;
-        // 참고 정보
+        // 음식점을 알게 된 경로
+        private ReferenceType referenceType;
+        // 참고 정보 (referenceType이 REVIEW인 경우)
         private ReferenceInfo referenceInfo;
         private Integer referenceCount; // 이 리뷰를 참고한 횟수
 
@@ -71,6 +74,7 @@ public class ReviewDto {
                     .receiptImageUrl(review.getReceiptImageUrl())
                     .receiptVerificationStatus(review.getReceiptVerificationStatus())
                     .isReceiptVerified(review.isReceiptVerified())
+                    .referenceType(review.getReferenceType())
                     .referenceInfo(referenceInfo)
                     .referenceCount(referenceCount)
                     .build();
@@ -148,7 +152,10 @@ public class ReviewDto {
         // 영수증 인증 이미지 URL (선택)
         private String receiptImageUrl;
 
-        // 참고한 리뷰 ID (선택)
+        // 음식점을 알게 된 경로 (NONE, PASSING, FRIEND, REVIEW)
+        private ReferenceType referenceType;
+
+        // 참고한 리뷰 ID (referenceType이 REVIEW인 경우)
         private Long referenceReviewId;
     }
 
@@ -187,6 +194,12 @@ public class ReviewDto {
 
         // 영수증 인증 이미지 URL
         private String receiptImageUrl;
+
+        // 음식점을 알게 된 경로 (NONE, PASSING, FRIEND, REVIEW)
+        private ReferenceType referenceType;
+
+        // 참고한 리뷰 ID (referenceType이 REVIEW인 경우)
+        private Long referenceReviewId;
     }
 
     @Getter

@@ -5,12 +5,14 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Entity
 @Table(name = "restaurants",
         indexes = {
             @Index(name = "idx_restaurant_region_category", columnList = "region, category"),
-            @Index(name = "idx_restaurant_category", columnList = "category")
+            @Index(name = "idx_restaurant_category", columnList = "category"),
+            @Index(name = "idx_restaurant_uuid", columnList = "uuid", unique = true)
         }
 )
 @Getter
@@ -22,6 +24,16 @@ public class Restaurant extends BaseTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(nullable = false, unique = true, length = 36)
+    private String uuid;
+
+    @PrePersist
+    public void prePersist() {
+        if (this.uuid == null) {
+            this.uuid = UUID.randomUUID().toString();
+        }
+    }
 
     @Column(nullable = false, length = 100)
     private String name;

@@ -259,6 +259,42 @@ public class UserService {
         return userBlockRepository.findBlockedUserIdsByBlockerId(userId);
     }
 
+    // 사용자 검색
+    public PageResponse<UserDto.SearchResponse> searchUsers(String query, Long currentUserId, Pageable pageable) {
+        Page<User> users = userRepository.findByNameContainingIgnoreCase(query, pageable);
+
+        // 현재 사용자의 팔로잉 목록 조회
+        Set<Long> followingIds = currentUserId != null
+                ? new HashSet<>(followRepository.findFollowingIdsByFollowerId(currentUserId))
+                : new HashSet<>();
+
+        List<UserDto.SearchResponse> content = users.getContent().stream()
+                .filter(user -> !user.getId().equals(currentUserId)) // 자기 자신 제외
+                .map(user -> UserDto.SearchResponse.from(user, followingIds.contains(user.getId())))
+                .toList();
+
+        return PageResponse.from(users, content);
+    }
+
+    // 알림 설정 조회
+    public UserDto.NotificationSettingsResponse getNotificationSettings(Long userId) {
+        User user = findUserById(userId);
+        return UserDto.NotificationSettingsResponse.from(user);
+    }
+
+    // 알림 설정 업데이트
+    @Transactional
+    public UserDto.NotificationSettingsResponse updateNotificationSettings(Long userId, UserDto.NotificationSettingsRequest request) {
+        User user = findUserById(userId);
+        user.updateNotificationSettings(
+                request.getReviews(),
+                request.getFollows(),
+                request.getMessages(),
+                request.getMarketing()
+        );
+        return UserDto.NotificationSettingsResponse.from(user);
+    }
+
     private User findUserById(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException("사용자를 찾을 수 없습니다", HttpStatus.NOT_FOUND, "USER_NOT_FOUND"));

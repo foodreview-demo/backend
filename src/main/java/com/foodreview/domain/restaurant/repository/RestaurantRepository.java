@@ -13,6 +13,9 @@ import java.util.Optional;
 
 public interface RestaurantRepository extends JpaRepository<Restaurant, Long> {
 
+    // UUID로 조회
+    Optional<Restaurant> findByUuid(String uuid);
+
     // 카카오 Place ID로 조회
     Optional<Restaurant> findByKakaoPlaceId(String kakaoPlaceId);
 

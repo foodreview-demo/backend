@@ -34,6 +34,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT u FROM User u WHERE u.region = :region AND u.id != :userId ORDER BY u.tasteScore DESC")
     List<User> findRecommendedFriends(@Param("region") String region, @Param("userId") Long userId, Pageable pageable);
 
-    // 이름으로 검색
+    // 이름으로 검색 (대소문자 구분)
     Page<User> findByNameContaining(String name, Pageable pageable);
+
+    // 이름으로 검색 (대소문자 무시)
+    Page<User> findByNameContainingIgnoreCase(String name, Pageable pageable);
 }
