@@ -58,6 +58,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/ranking/**").permitAll()
                         // WebSocket endpoints
                         .requestMatchers("/ws/**").permitAll()
+                        // Static resources
+                        .requestMatchers("/downloads/**").permitAll()
                         // All other requests require authentication
                         .anyRequest().authenticated()
                 )
