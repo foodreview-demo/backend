@@ -77,6 +77,17 @@ public class SecurityConfig {
         List<String> origins = Arrays.asList(allowedOrigins.split(","));
         configuration.setAllowedOrigins(origins);
 
+        // Capacitor 앱 지원을 위한 Origin 패턴 추가
+        // localhost 관련 모든 스킴 허용 (http, https, capacitor)
+        configuration.setAllowedOriginPatterns(Arrays.asList(
+                "http://localhost:*",
+                "https://localhost:*",
+                "http://localhost",
+                "https://localhost",
+                "capacitor://localhost",
+                "capacitor://*"
+        ));
+
         configuration.setAllowedMethods(Arrays.asList(
                 "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"
         ));
