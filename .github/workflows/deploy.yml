@@ -132,7 +132,11 @@ jobs:
             echo "=== Starting application ==="
             source app.env
             export DB_HOST DB_NAME DB_USERNAME DB_PASSWORD JWT_SECRET AWS_S3_BUCKET AWS_ACCESS_KEY AWS_SECRET_KEY AWS_REGION KAKAO_CLIENT_ID KAKAO_CLIENT_SECRET KAKAO_REDIRECT_URI CORS_ALLOWED_ORIGINS
-            nohup java -jar -Dspring.profiles.active=prod -Dserver.port=8080 "$JAR_FILE" > app.log 2>&1 &
+            nohup java -jar \
+              -Dspring.profiles.active=prod \
+              -Dserver.port=8080 \
+              -Dcors.allowed-origins="$CORS_ALLOWED_ORIGINS" \
+              "$JAR_FILE" > app.log 2>&1 &
             echo $! > app.pid
             disown
 
