@@ -1,5 +1,7 @@
 package com.foodreview.domain.user.service;
 
+import com.foodreview.domain.auth.repository.RefreshTokenRepository;
+import com.foodreview.domain.notification.service.FcmService;
 import com.foodreview.domain.user.dto.ScoreEventDto;
 import com.foodreview.domain.user.dto.UserDto;
 import com.foodreview.domain.user.entity.Follow;
@@ -34,6 +36,8 @@ public class UserService {
     private final FollowRepository followRepository;
     private final ScoreEventRepository scoreEventRepository;
     private final UserBlockRepository userBlockRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
+    private final FcmService fcmService;
 
     public UserDto.Response getUser(Long userId) {
         User user = findUserById(userId);
@@ -298,5 +302,30 @@ public class UserService {
     private User findUserById(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException("사용자를 찾을 수 없습니다", HttpStatus.NOT_FOUND, "USER_NOT_FOUND"));
+    }
+
+    // 회원 탈퇴
+    @Transactional
+    public void withdraw(Long userId) {
+        User user = findUserById(userId);
+
+        if (user.isDeleted()) {
+            throw new CustomException("이미 탈퇴한 계정입니다", HttpStatus.BAD_REQUEST, "ALREADY_WITHDRAWN");
+        }
+
+        // 1. 모든 RefreshToken 무효화
+        refreshTokenRepository.revokeAllByUser(user);
+
+        // 2. 팔로우 관계 삭제
+        followRepository.deleteByFollowerOrFollowing(user, user);
+
+        // 3. 차단 관계 삭제
+        userBlockRepository.deleteByBlockerOrBlockedUser(user, user);
+
+        // 4. FCM 토큰 삭제
+        fcmService.deleteUserTokens(user);
+
+        // 5. 사용자 정보 익명화 및 소프트 삭제
+        user.withdraw();
     }
 }

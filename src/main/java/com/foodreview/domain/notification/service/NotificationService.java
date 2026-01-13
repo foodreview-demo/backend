@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +26,7 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final FcmService fcmService;
 
     /**
      * 알림 생성
@@ -34,6 +36,12 @@ public class NotificationService {
                                    String message, Long referenceId) {
         // 자기 자신에게는 알림을 보내지 않음
         if (recipient.getId().equals(actor.getId())) {
+            return;
+        }
+
+        // 알림 타입에 따른 설정 확인
+        if (!shouldSendNotification(recipient, type)) {
+            log.debug("Notification disabled for user: {}, type: {}", recipient.getId(), type);
             return;
         }
 
@@ -47,6 +55,51 @@ public class NotificationService {
 
         notificationRepository.save(notification);
         log.debug("Notification created: type={}, recipient={}, actor={}", type, recipient.getId(), actor.getId());
+
+        // 푸시 알림 전송 (비동기)
+        sendPushNotification(recipient.getId(), type, message, referenceId);
+    }
+
+    /**
+     * 사용자 설정에 따라 알림을 보낼지 확인
+     */
+    private boolean shouldSendNotification(User recipient, Notification.NotificationType type) {
+        return switch (type) {
+            case SYMPATHY, COMMENT -> recipient.getNotifyReviews();
+            case FOLLOW -> recipient.getNotifyFollows();
+            case CHAT -> recipient.getNotifyMessages();
+            default -> true;
+        };
+    }
+
+    /**
+     * 푸시 알림 전송 (비동기)
+     */
+    @Async
+    public void sendPushNotification(Long userId, Notification.NotificationType type, String message, Long referenceId) {
+        String title = getPushTitle(type);
+        String clickAction = getClickAction(type, referenceId);
+        fcmService.sendToUser(userId, title, message, clickAction);
+    }
+
+    private String getPushTitle(Notification.NotificationType type) {
+        return switch (type) {
+            case SYMPATHY -> "새로운 공감";
+            case COMMENT -> "새 댓글";
+            case FOLLOW -> "새 팔로워";
+            case CHAT -> "새 메시지";
+            case REFERENCE -> "리뷰 참고";
+            default -> "맛잘알";
+        };
+    }
+
+    private String getClickAction(Notification.NotificationType type, Long referenceId) {
+        return switch (type) {
+            case SYMPATHY, COMMENT, REFERENCE -> "/reviews/" + referenceId;
+            case FOLLOW -> "/profile/" + referenceId;
+            case CHAT -> "/chat";
+            default -> "/";
+        };
     }
 
     /**

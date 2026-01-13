@@ -4,7 +4,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
+import java.util.Collections;
 import java.util.List;
 
 @Getter
@@ -41,6 +43,18 @@ public class PageResponse<T> {
                 .totalPages(page.getTotalPages())
                 .first(page.isFirst())
                 .last(page.isLast())
+                .build();
+    }
+
+    public static <T> PageResponse<T> empty(Pageable pageable) {
+        return PageResponse.<T>builder()
+                .content(Collections.emptyList())
+                .page(pageable.getPageNumber())
+                .size(pageable.getPageSize())
+                .totalElements(0)
+                .totalPages(0)
+                .first(true)
+                .last(true)
                 .build();
     }
 }

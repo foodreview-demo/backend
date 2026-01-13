@@ -4,6 +4,7 @@ import com.foodreview.domain.common.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -87,6 +88,14 @@ public class User extends BaseTimeEntity {
     @Builder.Default
     private Boolean notifyMarketing = false;
 
+    // 탈퇴 여부
+    @Column(name = "deleted", nullable = false)
+    @Builder.Default
+    private Boolean deleted = false;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     // 점수 추가
     public void addScore(int points) {
         this.tasteScore += points;
@@ -147,5 +156,23 @@ public class User extends BaseTimeEntity {
         if (notifyFollows != null) this.notifyFollows = notifyFollows;
         if (notifyMessages != null) this.notifyMessages = notifyMessages;
         if (notifyMarketing != null) this.notifyMarketing = notifyMarketing;
+    }
+
+    // 회원 탈퇴 처리 (소프트 삭제 + 개인정보 익명화)
+    public void withdraw() {
+        this.deleted = true;
+        this.deletedAt = LocalDateTime.now();
+        // 개인정보 익명화
+        this.email = "withdrawn_" + this.id + "@deleted.user";
+        this.name = "탈퇴한 사용자";
+        this.avatar = null;
+        this.password = "";
+        this.provider = null;
+        this.providerId = null;
+    }
+
+    // 탈퇴 여부 확인
+    public boolean isDeleted() {
+        return this.deleted != null && this.deleted;
     }
 }

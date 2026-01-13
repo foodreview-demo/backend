@@ -45,3 +45,7 @@ application-local.yml
 ### Logs ###
 logs/
 *.log
+
+# Firebase service account (sensitive)
+firebase-service-account.json
+src/main/resources/firebase-service-account.json

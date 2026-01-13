@@ -203,4 +203,11 @@ public class UserController {
         UserDto.NotificationSettingsResponse response = userService.updateNotificationSettings(userDetails.getUserId(), request);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
+
+    @Operation(summary = "회원 탈퇴")
+    @DeleteMapping("/me")
+    public ResponseEntity<ApiResponse<Void>> withdraw(@CurrentUser CustomUserDetails userDetails) {
+        userService.withdraw(userDetails.getUserId());
+        return ResponseEntity.ok(ApiResponse.success(null, "회원 탈퇴가 완료되었습니다"));
+    }
 }

@@ -15,6 +15,7 @@ import com.foodreview.domain.review.repository.ReviewRepository;
 import com.foodreview.domain.review.repository.SympathyRepository;
 import com.foodreview.domain.user.entity.ScoreEvent;
 import com.foodreview.domain.user.entity.User;
+import com.foodreview.domain.user.repository.FollowRepository;
 import com.foodreview.domain.user.repository.ScoreEventRepository;
 import com.foodreview.domain.user.repository.UserBlockRepository;
 import com.foodreview.domain.user.repository.UserRepository;
@@ -51,6 +52,7 @@ public class ReviewService {
     private final ScoreEventRepository scoreEventRepository;
     private final ReviewReferenceRepository reviewReferenceRepository;
     private final UserBlockRepository userBlockRepository;
+    private final FollowRepository followRepository;
     private final NotificationService notificationService;
 
     private static final int FIRST_REVIEW_POINTS = 100;
@@ -84,18 +86,37 @@ public class ReviewService {
 
     // 리뷰 목록 조회 (필터링) - 기존 호환
     public PageResponse<ReviewDto.Response> getReviews(String region, String category, Long currentUserId, Pageable pageable) {
-        return getReviews(region, null, null, category, currentUserId, pageable);
+        return getReviews(region, null, null, category, currentUserId, false, pageable);
     }
 
-    // 리뷰 목록 조회 (동 단위 필터링 지원)
+    // 리뷰 목록 조회 (동 단위 필터링 지원) - 기존 호환
     public PageResponse<ReviewDto.Response> getReviews(String region, String district, String neighborhood,
                                                         String category, Long currentUserId, Pageable pageable) {
+        return getReviews(region, district, neighborhood, category, currentUserId, false, pageable);
+    }
+
+    // 리뷰 목록 조회 (팔로잉 필터 지원)
+    public PageResponse<ReviewDto.Response> getReviews(String region, String district, String neighborhood,
+                                                        String category, Long currentUserId, boolean followingOnly, Pageable pageable) {
         Page<Review> reviews;
         Restaurant.Category cat = category != null ? Restaurant.Category.valueOf(category) : null;
 
+        // 팔로잉 전용 피드
+        if (followingOnly && currentUserId != null) {
+            List<Long> followingIds = followRepository.findFollowingIdsByFollowerId(currentUserId);
+            if (followingIds.isEmpty()) {
+                // 팔로잉이 없으면 빈 결과 반환
+                return PageResponse.empty(pageable);
+            }
+            if (cat != null) {
+                reviews = reviewRepository.findByUserIdInAndCategory(followingIds, cat, pageable);
+            } else {
+                reviews = reviewRepository.findByUserIdIn(followingIds, pageable);
+            }
+        }
         // 동 단위 필터링 (가장 세밀한 필터)
         // neighborhood가 콤마로 구분된 경우 IN 절 사용
-        if (neighborhood != null) {
+        else if (neighborhood != null) {
             List<String> neighborhoods = Arrays.asList(neighborhood.split(","));
             if (neighborhoods.size() > 1) {
                 // 복수 동 필터링

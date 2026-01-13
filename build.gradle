@@ -58,6 +58,9 @@ dependencies {
     // Rate Limiting (보안 강화)
     implementation 'com.bucket4j:bucket4j-core:8.7.0'
 
+    // Firebase Admin SDK (FCM Push Notifications)
+    implementation 'com.google.firebase:firebase-admin:9.2.0'
+
     // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'

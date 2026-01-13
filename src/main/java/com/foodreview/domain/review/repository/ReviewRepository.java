@@ -97,4 +97,15 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     // 영수증 검증 대기 리뷰 수
     @Query("SELECT COUNT(r) FROM Review r WHERE r.receiptVerificationStatus = :status")
     long countByReceiptVerificationStatus(@Param("status") ReceiptVerificationStatus status);
+
+    // 팔로잉 사용자의 리뷰 조회
+    @Query("SELECT r FROM Review r WHERE r.user.id IN :userIds ORDER BY r.createdAt DESC")
+    Page<Review> findByUserIdIn(@Param("userIds") List<Long> userIds, Pageable pageable);
+
+    // 팔로잉 사용자의 리뷰 조회 + 카테고리 필터
+    @Query("SELECT r FROM Review r WHERE r.user.id IN :userIds AND r.restaurant.category = :category ORDER BY r.createdAt DESC")
+    Page<Review> findByUserIdInAndCategory(
+            @Param("userIds") List<Long> userIds,
+            @Param("category") Restaurant.Category category,
+            Pageable pageable);
 }

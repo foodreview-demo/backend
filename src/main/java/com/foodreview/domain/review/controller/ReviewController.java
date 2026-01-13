@@ -27,17 +27,18 @@ public class ReviewController {
 
     private final ReviewService reviewService;
 
-    @Operation(summary = "리뷰 목록 조회 (동/구/시 단위 필터링 지원)")
+    @Operation(summary = "리뷰 목록 조회 (동/구/시 단위 필터링 지원, 팔로잉 필터 지원)")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<ReviewDto.Response>>> getReviews(
             @RequestParam(name = "region", required = false) String region,
             @RequestParam(name = "district", required = false) String district,
             @RequestParam(name = "neighborhood", required = false) String neighborhood,
             @RequestParam(name = "category", required = false) String category,
+            @RequestParam(name = "followingOnly", required = false, defaultValue = "false") boolean followingOnly,
             @CurrentUser CustomUserDetails userDetails,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         Long userId = userDetails != null ? userDetails.getUserId() : null;
-        PageResponse<ReviewDto.Response> response = reviewService.getReviews(region, district, neighborhood, category, userId, pageable);
+        PageResponse<ReviewDto.Response> response = reviewService.getReviews(region, district, neighborhood, category, userId, followingOnly, pageable);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
