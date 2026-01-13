@@ -146,7 +146,6 @@ public class FcmService {
                 .setAndroidConfig(AndroidConfig.builder()
                         .setNotification(AndroidNotification.builder()
                                 .setSound("default")
-                                .setClickAction("FLUTTER_NOTIFICATION_CLICK")
                                 .build())
                         .build())
                 .setApnsConfig(ApnsConfig.builder()
