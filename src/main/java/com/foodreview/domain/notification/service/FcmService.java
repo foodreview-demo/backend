@@ -82,15 +82,17 @@ public class FcmService {
      * 특정 사용자에게 푸시 알림 전송
      */
     public void sendToUser(Long userId, String title, String body, String clickAction) {
+        log.info("sendToUser called: userId={}, title={}", userId, title);
+
         if (firebaseMessaging == null) {
             log.warn("FirebaseMessaging not initialized. Skipping push notification.");
             return;
         }
 
         List<String> tokens = fcmTokenRepository.findActiveTokensByUserId(userId);
+        log.info("Found {} active FCM tokens for user: {}", tokens.size(), userId);
 
         if (tokens.isEmpty()) {
-            log.debug("No active FCM tokens for user: {}", userId);
             return;
         }
 
