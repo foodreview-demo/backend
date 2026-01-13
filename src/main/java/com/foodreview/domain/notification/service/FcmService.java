@@ -7,8 +7,8 @@ import com.foodreview.domain.user.entity.User;
 import com.foodreview.domain.user.repository.UserRepository;
 import com.foodreview.global.exception.CustomException;
 import com.google.firebase.messaging.*;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,12 +18,19 @@ import java.util.Optional;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class FcmService {
 
     private final FcmTokenRepository fcmTokenRepository;
     private final UserRepository userRepository;
     private final FirebaseMessaging firebaseMessaging;
+
+    public FcmService(FcmTokenRepository fcmTokenRepository,
+                      UserRepository userRepository,
+                      @Autowired(required = false) FirebaseMessaging firebaseMessaging) {
+        this.fcmTokenRepository = fcmTokenRepository;
+        this.userRepository = userRepository;
+        this.firebaseMessaging = firebaseMessaging;
+    }
 
     /**
      * FCM 토큰 등록/업데이트
