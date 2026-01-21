@@ -21,4 +21,20 @@ public interface SympathyRepository extends JpaRepository<Sympathy, Long> {
     // 사용자가 공감한 리뷰 ID 목록
     @Query("SELECT s.review.id FROM Sympathy s WHERE s.user.id = :userId")
     List<Long> findReviewIdsByUserId(@Param("userId") Long userId);
+
+    // 내가 공감한 리뷰의 작성자 + 공감 횟수 (나 자신 제외)
+    @Query("SELECT s.review.user.id, COUNT(s.review.user.id) as sympathyCount " +
+           "FROM Sympathy s " +
+           "WHERE s.user.id = :userId AND s.review.user.id != :userId " +
+           "GROUP BY s.review.user.id " +
+           "ORDER BY sympathyCount DESC")
+    List<Object[]> findSympathizedAuthors(@Param("userId") Long userId);
+
+    // 내 리뷰에 공감한 사용자 + 공감 횟수 (나 자신 제외)
+    @Query("SELECT s.user.id, COUNT(s.user.id) as sympathyCount " +
+           "FROM Sympathy s " +
+           "WHERE s.review.user.id = :userId AND s.user.id != :userId " +
+           "GROUP BY s.user.id " +
+           "ORDER BY sympathyCount DESC")
+    List<Object[]> findSympathizers(@Param("userId") Long userId);
 }

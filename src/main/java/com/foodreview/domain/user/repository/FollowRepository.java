@@ -43,4 +43,22 @@ public interface FollowRepository extends JpaRepository<Follow, Long> {
 
     // 회원 탈퇴 시 팔로우 관계 전체 삭제
     void deleteByFollowerOrFollowing(User follower, User following);
+
+    // 2촌 관계 조회: 내가 팔로우하는 사람들이 팔로우하는 사용자 + 공통 팔로워 수
+    // (나 자신과 이미 팔로우하는 사람 제외)
+    @Query("SELECT f2.following.id, COUNT(f2.following.id) as mutualCount " +
+           "FROM Follow f1 " +
+           "JOIN Follow f2 ON f1.following = f2.follower " +
+           "WHERE f1.follower.id = :userId " +
+           "AND f2.following.id != :userId " +
+           "AND f2.following.id NOT IN (SELECT f3.following.id FROM Follow f3 WHERE f3.follower.id = :userId) " +
+           "GROUP BY f2.following.id " +
+           "ORDER BY mutualCount DESC")
+    List<Object[]> findSecondDegreeConnections(@Param("userId") Long userId);
+
+    // 특정 사용자와의 공통 팔로워 이름 목록 (추천 이유 표시용, 최대 3명)
+    @Query("SELECT f1.following.name FROM Follow f1 " +
+           "JOIN Follow f2 ON f1.following = f2.follower " +
+           "WHERE f1.follower.id = :userId AND f2.following.id = :targetUserId")
+    List<String> findMutualFollowerNames(@Param("userId") Long userId, @Param("targetUserId") Long targetUserId);
 }

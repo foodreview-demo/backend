@@ -108,4 +108,25 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
             @Param("userIds") List<Long> userIds,
             @Param("category") Restaurant.Category category,
             Pageable pageable);
+
+    // 같은 음식점에 리뷰를 작성한 다른 사용자 목록 + 공통 음식점 수 (나 자신 제외)
+    @Query("SELECT r2.user.id, COUNT(DISTINCT r2.restaurant.id) as commonCount " +
+           "FROM Review r1 " +
+           "JOIN Review r2 ON r1.restaurant = r2.restaurant " +
+           "WHERE r1.user.id = :userId AND r2.user.id != :userId " +
+           "GROUP BY r2.user.id " +
+           "HAVING COUNT(DISTINCT r2.restaurant.id) >= :minCommon " +
+           "ORDER BY commonCount DESC")
+    List<Object[]> findUsersWithCommonRestaurants(@Param("userId") Long userId, @Param("minCommon") int minCommon);
+
+    // 두 사용자 간 공통 음식점의 별점 정보 조회 (취향 유사도 계산용)
+    @Query("SELECT r1.restaurant.id, r1.rating, r2.rating " +
+           "FROM Review r1 " +
+           "JOIN Review r2 ON r1.restaurant = r2.restaurant " +
+           "WHERE r1.user.id = :userId1 AND r2.user.id = :userId2")
+    List<Object[]> findCommonRestaurantRatings(@Param("userId1") Long userId1, @Param("userId2") Long userId2);
+
+    // 사용자가 리뷰한 음식점 ID 목록
+    @Query("SELECT r.restaurant.id FROM Review r WHERE r.user.id = :userId")
+    List<Long> findRestaurantIdsByUserId(@Param("userId") Long userId);
 }
