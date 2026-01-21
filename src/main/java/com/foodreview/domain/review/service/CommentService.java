@@ -63,7 +63,7 @@ public class CommentService {
 
         Comment savedComment = commentRepository.save(comment);
 
-        // 알림 생성
+        // 알림 생성 (commentId 포함하여 푸시 알림 클릭 시 해당 댓글로 이동)
         if (parent != null) {
             // 대댓글인 경우: 부모 댓글 작성자에게 알림
             notificationService.createNotification(
@@ -71,7 +71,8 @@ public class CommentService {
                     user,
                     Notification.NotificationType.REPLY,
                     String.format("%s님이 회원님의 댓글에 답글을 남겼습니다.", user.getName()),
-                    reviewId
+                    reviewId,
+                    savedComment.getId()
             );
         } else {
             // 일반 댓글인 경우: 리뷰 작성자에게 알림
@@ -80,7 +81,8 @@ public class CommentService {
                     user,
                     Notification.NotificationType.COMMENT,
                     String.format("%s님이 회원님의 리뷰에 댓글을 남겼습니다.", user.getName()),
-                    reviewId
+                    reviewId,
+                    savedComment.getId()
             );
         }
 

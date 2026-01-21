@@ -34,6 +34,15 @@ public class NotificationService {
     @Transactional
     public void createNotification(User recipient, User actor, Notification.NotificationType type,
                                    String message, Long referenceId) {
+        createNotification(recipient, actor, type, message, referenceId, null);
+    }
+
+    /**
+     * 알림 생성 (commentId 포함)
+     */
+    @Transactional
+    public void createNotification(User recipient, User actor, Notification.NotificationType type,
+                                   String message, Long referenceId, Long commentId) {
         // 자기 자신에게는 알림을 보내지 않음
         if (recipient.getId().equals(actor.getId())) {
             return;
@@ -57,7 +66,7 @@ public class NotificationService {
         log.debug("Notification created: type={}, recipient={}, actor={}", type, recipient.getId(), actor.getId());
 
         // 푸시 알림 전송 (비동기)
-        sendPushNotification(recipient.getId(), type, message, referenceId);
+        sendPushNotification(recipient.getId(), type, message, referenceId, commentId);
     }
 
     /**
@@ -76,16 +85,16 @@ public class NotificationService {
      * 푸시 알림 전송 (비동기)
      */
     @Async
-    public void sendPushNotification(Long userId, Notification.NotificationType type, String message, Long referenceId) {
+    public void sendPushNotification(Long userId, Notification.NotificationType type, String message, Long referenceId, Long commentId) {
         String title = getPushTitle(type);
-        String clickAction = getClickAction(type, referenceId);
+        String clickAction = getClickAction(type, referenceId, commentId);
         fcmService.sendToUser(userId, title, message, clickAction);
     }
 
     private String getPushTitle(Notification.NotificationType type) {
         return switch (type) {
             case SYMPATHY -> "새로운 공감";
-            case COMMENT -> "새 댓글";
+            case COMMENT, REPLY -> "새 댓글";
             case FOLLOW -> "새 팔로워";
             case CHAT -> "새 메시지";
             case REFERENCE -> "리뷰 참고";
@@ -93,9 +102,16 @@ public class NotificationService {
         };
     }
 
-    private String getClickAction(Notification.NotificationType type, Long referenceId) {
+    private String getClickAction(Notification.NotificationType type, Long referenceId, Long commentId) {
         return switch (type) {
-            case SYMPATHY, COMMENT, REFERENCE -> "/reviews/" + referenceId;
+            case SYMPATHY, REFERENCE -> "/reviews/" + referenceId;
+            case COMMENT, REPLY -> {
+                String url = "/reviews/" + referenceId;
+                if (commentId != null) {
+                    url += "?commentId=" + commentId;
+                }
+                yield url;
+            }
             case FOLLOW -> "/profile/" + referenceId;
             case CHAT -> "/chat";
             default -> "/";
