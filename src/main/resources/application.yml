@@ -21,6 +21,12 @@ spring:
     init:
       mode: never
 
+  batch:
+    jdbc:
+      initialize-schema: always  # Batch 메타 테이블 자동 생성
+    job:
+      enabled: false  # 시작 시 자동 실행 비활성화 (스케줄러로 실행)
+
   servlet:
     multipart:
       max-file-size: 10MB

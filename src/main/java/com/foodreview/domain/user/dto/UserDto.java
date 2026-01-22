@@ -1,8 +1,11 @@
 package com.foodreview.domain.user.dto;
 
+import com.foodreview.domain.user.entity.RecommendationCache;
 import com.foodreview.domain.user.entity.User;
 import lombok.*;
 
+import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 
 public class UserDto {
@@ -222,5 +225,51 @@ public class UserDto {
         private Boolean follows;
         private Boolean messages;
         private Boolean marketing;
+    }
+
+    // 추천 점수 상세 (디버깅/Admin용)
+    @Getter
+    @Builder
+    @AllArgsConstructor
+    public static class RecommendationScoreDetail {
+        private Long userId;
+        private Long recommendedUserId;
+        private int totalScore;
+        private int secondDegreeScore;
+        private int secondDegreeCount;
+        private int outgoingSympathyScore;
+        private int outgoingSympathyCount;
+        private int incomingSympathyScore;
+        private int incomingSympathyCount;
+        private int tasteScore;
+        private double tasteSimilarity;
+        private int commonRestaurantCount;
+        private int baseScore;
+        private String reason;
+        private List<String> commonCategories;
+        private LocalDateTime calculatedAt;
+
+        public static RecommendationScoreDetail from(RecommendationCache cache) {
+            return RecommendationScoreDetail.builder()
+                    .userId(cache.getUserId())
+                    .recommendedUserId(cache.getRecommendedUserId())
+                    .totalScore(cache.getTotalScore())
+                    .secondDegreeScore(cache.getSecondDegreeScore())
+                    .secondDegreeCount(cache.getSecondDegreeCount())
+                    .outgoingSympathyScore(cache.getOutgoingSympathyScore())
+                    .outgoingSympathyCount(cache.getOutgoingSympathyCount())
+                    .incomingSympathyScore(cache.getIncomingSympathyScore())
+                    .incomingSympathyCount(cache.getIncomingSympathyCount())
+                    .tasteScore(cache.getTasteScore())
+                    .tasteSimilarity(cache.getTasteSimilarity())
+                    .commonRestaurantCount(cache.getCommonRestaurantCount())
+                    .baseScore(cache.getBaseScore())
+                    .reason(cache.getReason())
+                    .commonCategories(cache.getCommonCategories() != null && !cache.getCommonCategories().isEmpty()
+                            ? Arrays.asList(cache.getCommonCategories().split(","))
+                            : List.of())
+                    .calculatedAt(cache.getCalculatedAt())
+                    .build();
+        }
     }
 }
