@@ -1,5 +1,6 @@
 package com.foodreview.domain.review.service;
 
+import com.foodreview.domain.badge.service.BadgeService;
 import com.foodreview.domain.notification.entity.Notification;
 import com.foodreview.domain.notification.service.NotificationService;
 import com.foodreview.domain.restaurant.entity.Restaurant;
@@ -54,6 +55,7 @@ public class ReviewService {
     private final UserBlockRepository userBlockRepository;
     private final FollowRepository followRepository;
     private final NotificationService notificationService;
+    private final BadgeService badgeService;
 
     private static final int FIRST_REVIEW_POINTS = 100;
     private static final int NORMAL_REVIEW_POINTS = 50;
@@ -290,6 +292,10 @@ public class ReviewService {
                 .build();
         scoreEventRepository.save(event);
 
+        // 배지 체크 (점수 기반 + 리뷰 수 기반)
+        badgeService.checkAndAwardScoreBadges(user.getId(), user.getTasteScore());
+        badgeService.checkAndAwardReviewBadges(user.getId(), user.getReviewCount());
+
         // 참고 리뷰 처리
         ReviewDto.ReferenceInfo referenceInfo = null;
         if (request.getReferenceReviewId() != null) {
@@ -342,6 +348,9 @@ public class ReviewService {
                     String.format("%s님이 회원님의 리뷰를 참고하여 리뷰를 작성했습니다. (+%d점)", reviewer.getName(), influencePoints),
                     referenceReview.getRestaurant().getId()
             );
+
+            // 배지 체크 (참고 받은 사용자)
+            badgeService.checkAndAwardScoreBadges(referenceUser.getId(), referenceUser.getTasteScore());
         }
 
         // 참고 기록 저장
@@ -495,6 +504,10 @@ public class ReviewService {
                 String.format("%s님이 회원님의 리뷰에 공감했습니다.", user.getName()),
                 review.getRestaurant().getId()
         );
+
+        // 배지 체크 (점수 기반 + 받은 공감 수 기반)
+        badgeService.checkAndAwardScoreBadges(reviewAuthor.getId(), reviewAuthor.getTasteScore());
+        badgeService.checkAndAwardSympathyBadges(reviewAuthor.getId(), reviewAuthor.getReceivedSympathyCount());
 
         return ReviewDto.SympathyResponse.builder()
                 .reviewId(reviewId)

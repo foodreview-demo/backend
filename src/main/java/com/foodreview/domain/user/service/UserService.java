@@ -1,6 +1,7 @@
 package com.foodreview.domain.user.service;
 
 import com.foodreview.domain.auth.repository.RefreshTokenRepository;
+import com.foodreview.domain.badge.service.BadgeService;
 import com.foodreview.domain.notification.service.FcmService;
 import com.foodreview.domain.review.repository.ReviewRepository;
 import com.foodreview.domain.review.repository.SympathyRepository;
@@ -48,6 +49,7 @@ public class UserService {
     private final SympathyRepository sympathyRepository;
     private final ReviewRepository reviewRepository;
     private final RecommendationCacheRepository recommendationCacheRepository;
+    private final BadgeService badgeService;
 
 
     public UserDto.Response getUser(Long userId) {
@@ -170,6 +172,10 @@ public class UserService {
                 .build();
 
         followRepository.save(follow);
+
+        // 팔로워 배지 체크 (팔로우 받은 사용자)
+        int followerCount = (int) followRepository.countByFollowing(following);
+        badgeService.checkAndAwardFollowerBadges(followingId, followerCount);
     }
 
     // 언팔로우
