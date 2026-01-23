@@ -39,4 +39,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // 이름으로 검색 (대소문자 무시)
     Page<User> findByNameContainingIgnoreCase(String name, Pageable pageable);
+
+    // 배치용: favoriteCategories를 함께 조회 (LAZY 로딩 문제 방지)
+    @Query("SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.favoriteCategories WHERE u.deleted = false")
+    List<User> findAllActiveUsersWithCategories();
+
+    // 배치용: 단일 사용자 + favoriteCategories 조회
+    @Query("SELECT u FROM User u LEFT JOIN FETCH u.favoriteCategories WHERE u.id = :userId")
+    Optional<User> findByIdWithCategories(@Param("userId") Long userId);
 }

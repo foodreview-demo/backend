@@ -2,6 +2,7 @@ package com.foodreview.domain.auth.service;
 
 import com.foodreview.domain.auth.dto.AuthDto;
 import com.foodreview.domain.auth.dto.KakaoOAuthDto;
+import com.foodreview.domain.badge.service.BadgeService;
 import com.foodreview.domain.user.entity.AuthProvider;
 import com.foodreview.domain.user.entity.User;
 import com.foodreview.domain.user.repository.UserRepository;
@@ -29,6 +30,7 @@ public class KakaoOAuthService {
     private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenService refreshTokenService;
+    private final BadgeService badgeService;
     private final WebClient webClient = WebClient.create();
 
     @Value("${oauth.kakao.client-id}")
@@ -158,6 +160,10 @@ public class KakaoOAuthService {
                 .build();
 
         User savedUser = userRepository.save(newUser);
+
+        // 입문자 배지 지급 (0점 기준)
+        badgeService.checkAndAwardScoreBadges(savedUser.getId(), savedUser.getTasteScore());
+
         return savedUser;
     }
 }

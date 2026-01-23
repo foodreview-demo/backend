@@ -2,6 +2,7 @@ package com.foodreview.domain.auth.service;
 
 import com.foodreview.domain.auth.dto.AuthDto;
 import com.foodreview.domain.auth.entity.RefreshToken;
+import com.foodreview.domain.badge.service.BadgeService;
 import com.foodreview.domain.user.dto.UserDto;
 import com.foodreview.domain.user.entity.User;
 import com.foodreview.domain.user.repository.UserRepository;
@@ -25,6 +26,7 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthenticationManager authenticationManager;
     private final RefreshTokenService refreshTokenService;
+    private final BadgeService badgeService;
 
     @Transactional
     public UserDto.Response signUp(AuthDto.SignUpRequest request) {
@@ -41,6 +43,9 @@ public class AuthService {
                 .build();
 
         User savedUser = userRepository.save(user);
+
+        // 입문자 배지 지급 (0점 기준)
+        badgeService.checkAndAwardScoreBadges(savedUser.getId(), savedUser.getTasteScore());
 
         Integer rank = userRepository.findRankByRegionAndScore(savedUser.getRegion(), savedUser.getTasteScore());
         return UserDto.Response.from(savedUser, rank);
