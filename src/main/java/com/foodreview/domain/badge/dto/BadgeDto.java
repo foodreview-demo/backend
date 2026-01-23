@@ -6,6 +6,7 @@ import com.foodreview.domain.badge.entity.UserBadge;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
@@ -100,6 +101,7 @@ public class BadgeDto {
     }
 
     @Getter
+    @NoArgsConstructor
     @AllArgsConstructor
     public static class DisplayRequest {
         private Long badgeId;

@@ -19,17 +19,27 @@ import java.util.List;
 public class BadgeInitializer implements ApplicationRunner {
 
     private final BadgeRepository badgeRepository;
+    private final BadgeService badgeService;
 
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
-        // 이미 배지가 있으면 스킵
-        if (badgeRepository.count() > 0) {
-            log.info("Badges already initialized, skipping...");
-            return;
+        // 이미 배지가 있으면 배지 생성 스킵
+        boolean badgesExist = badgeRepository.count() > 0;
+
+        if (badgesExist) {
+            log.info("Badges already initialized, skipping badge creation...");
+        } else {
+            log.info("Initializing badges...");
+            initializeBadges();
         }
 
-        log.info("Initializing badges...");
+        // 기존 사용자들에게 배지 마이그레이션 (항상 실행 - 중복 지급 방지 로직 있음)
+        badgeService.migrateExistingUserBadges();
+    }
+
+    private void initializeBadges() {
+        log.info("Creating badge definitions...");
 
         List<Badge> badges = List.of(
                 // === 등급 배지 (GRADE) ===
