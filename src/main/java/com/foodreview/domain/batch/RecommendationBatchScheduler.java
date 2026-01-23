@@ -41,7 +41,7 @@ public class RecommendationBatchScheduler {
     /**
      * 서버 시작 후 5분 뒤에 초기 배치 실행 (기존 캐시가 없을 때를 대비)
      */
-    @Scheduled(initialDelay = 300000, fixedDelay = Long.MAX_VALUE)
+    @Scheduled(initialDelay = 60000, fixedDelay = Long.MAX_VALUE)
     public void runInitialBatch() {
         try {
             log.info("Running initial recommendation batch...");

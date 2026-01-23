@@ -73,10 +73,8 @@ public class RecommendationBatchConfig {
 
     @Bean
     public ItemReader<User> userItemReader() {
-        // 삭제되지 않은 활성 사용자만 조회
-        List<User> users = userRepository.findAll().stream()
-                .filter(u -> !u.isDeleted())
-                .toList();
+        // 삭제되지 않은 활성 사용자만 조회 (favoriteCategories 함께 로드)
+        List<User> users = userRepository.findAllActiveUsersWithCategories();
         log.info("Recommendation batch: {} active users to process", users.size());
         return new ListItemReader<>(users);
     }
@@ -146,7 +144,7 @@ public class RecommendationBatchConfig {
 
             // 4. 기본 점수 추가 (같은 지역, 공통 카테고리)
             for (Long candidateId : scoreMap.keySet()) {
-                User candidate = userRepository.findById(candidateId).orElse(null);
+                User candidate = userRepository.findByIdWithCategories(candidateId).orElse(null);
                 if (candidate == null || candidate.isDeleted()) continue;
 
                 RecommendationScoreData recScore = scoreMap.get(candidateId);

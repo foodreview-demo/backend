@@ -34,6 +34,11 @@ import java.util.stream.IntStream;
 @Transactional(readOnly = true)
 public class UserService {
 
+    // 추천 점수 기준치 (이 점수 이상이어야 추천 목록에 표시)
+    private static final int MIN_RECOMMEND_SCORE = 20;
+    // 점수가 낮아도 최소 보장되는 추천 인원
+    private static final int MIN_GUARANTEED_COUNT = 3;
+
     private final UserRepository userRepository;
     private final FollowRepository followRepository;
     private final ScoreEventRepository scoreEventRepository;
@@ -106,13 +111,23 @@ public class UserService {
         }
 
         // 이미 팔로우 중인 사용자 제외하고 결과 생성
+        // 상위 MIN_GUARANTEED_COUNT명은 점수 무관하게 항상 포함, 이후는 기준치 이상만 포함
         List<UserDto.RecommendResponse> result = new ArrayList<>();
+        int validCandidateCount = 0; // 유효한 후보 순위 (팔로우/삭제 제외 후)
+
         for (RecommendationCache cache : cachedRecommendations) {
             if (result.size() >= limit) break;
             if (followingIds.contains(cache.getRecommendedUserId())) continue;
 
             User candidate = userRepository.findById(cache.getRecommendedUserId()).orElse(null);
             if (candidate == null || candidate.isDeleted()) continue;
+
+            validCandidateCount++;
+
+            // 상위 3명은 점수 무관하게 포함, 이후는 기준치 이상만
+            if (validCandidateCount > MIN_GUARANTEED_COUNT && cache.getTotalScore() < MIN_RECOMMEND_SCORE) {
+                continue;
+            }
 
             List<String> commonCategories = cache.getCommonCategories() != null && !cache.getCommonCategories().isEmpty()
                     ? Arrays.asList(cache.getCommonCategories().split(","))
@@ -121,7 +136,8 @@ public class UserService {
             result.add(UserDto.RecommendResponse.from(candidate, commonCategories, cache.getReason()));
         }
 
-        log.debug("Friend recommendations for user {} from cache: {} results", userId, result.size());
+        log.debug("Friend recommendations for user {} from cache: {} results (guaranteed: {}, threshold: {})",
+                userId, result.size(), MIN_GUARANTEED_COUNT, MIN_RECOMMEND_SCORE);
         return result;
     }
 
