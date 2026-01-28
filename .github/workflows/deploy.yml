@@ -136,13 +136,23 @@ jobs:
             chmod 600 firebase-service-account.json
 
             echo "=== Starting application ==="
-            source app.env
-            export DB_HOST DB_NAME DB_USERNAME DB_PASSWORD JWT_SECRET AWS_S3_BUCKET AWS_ACCESS_KEY AWS_SECRET_KEY AWS_REGION KAKAO_CLIENT_ID KAKAO_CLIENT_SECRET KAKAO_REDIRECT_URI CORS_ALLOWED_ORIGINS FIREBASE_CONFIG_PATH
             nohup java -jar \
               -Dspring.profiles.active=prod \
               -Dserver.port=8080 \
+              -DDB_HOST="$DB_HOST" \
+              -DDB_NAME="$DB_NAME" \
+              -DDB_USERNAME="$DB_USERNAME" \
+              -DDB_PASSWORD="$DB_PASSWORD" \
+              -DJWT_SECRET="$JWT_SECRET" \
+              -DAWS_S3_BUCKET="$AWS_S3_BUCKET" \
+              -DAWS_ACCESS_KEY="$AWS_ACCESS_KEY" \
+              -DAWS_SECRET_KEY="$AWS_SECRET_KEY" \
+              -DAWS_REGION="$AWS_REGION" \
+              -DKAKAO_CLIENT_ID="$KAKAO_CLIENT_ID" \
+              -DKAKAO_CLIENT_SECRET="$KAKAO_CLIENT_SECRET" \
+              -DKAKAO_REDIRECT_URI="$KAKAO_REDIRECT_URI" \
               -Dcors.allowed-origins="$CORS_ALLOWED_ORIGINS" \
-              -Dfirebase.config-path="$FIREBASE_CONFIG_PATH" \
+              -Dfirebase.config-path="firebase-service-account.json" \
               "$JAR_FILE" > app.log 2>&1 &
             echo $! > app.pid
             disown
