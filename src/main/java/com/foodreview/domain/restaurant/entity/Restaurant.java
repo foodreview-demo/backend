@@ -1,6 +1,7 @@
 package com.foodreview.domain.restaurant.entity;
 
 import com.foodreview.domain.common.BaseTimeEntity;
+import com.foodreview.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -117,6 +118,37 @@ public class Restaurant extends BaseTimeEntity {
 
     @Column
     private Double longitude;
+
+    // 수동 등록 관련 필드
+    @Column(name = "is_manual_registration")
+    @Builder.Default
+    private Boolean isManualRegistration = false;
+
+    @Column(name = "signboard_image_url", length = 500)
+    private String signboardImageUrl;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "approval_status")
+    @Builder.Default
+    private RestaurantApprovalStatus approvalStatus = RestaurantApprovalStatus.APPROVED;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "registered_by_id")
+    private User registeredBy;
+
+    @Column(name = "rejection_reason", length = 500)
+    private String rejectionReason;
+
+    // 승인 상태 변경 메서드
+    public void approve() {
+        this.approvalStatus = RestaurantApprovalStatus.APPROVED;
+        this.rejectionReason = null;
+    }
+
+    public void reject(String reason) {
+        this.approvalStatus = RestaurantApprovalStatus.REJECTED;
+        this.rejectionReason = reason;
+    }
 
     // 리뷰 추가 시 평점 업데이트
     public void addReview(BigDecimal newRating) {

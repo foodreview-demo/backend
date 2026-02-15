@@ -2,7 +2,12 @@ package com.foodreview.domain.restaurant.service;
 
 import com.foodreview.domain.restaurant.dto.RestaurantDto;
 import com.foodreview.domain.restaurant.entity.Restaurant;
+import com.foodreview.domain.restaurant.entity.RestaurantApprovalStatus;
 import com.foodreview.domain.restaurant.repository.RestaurantRepository;
+import com.foodreview.domain.review.repository.ReviewRepository;
+import com.foodreview.domain.user.entity.User;
+import com.foodreview.domain.user.repository.FollowRepository;
+import com.foodreview.domain.user.repository.UserRepository;
 import com.foodreview.global.common.PageResponse;
 import com.foodreview.global.exception.CustomException;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -20,6 +26,9 @@ import java.util.List;
 public class RestaurantService {
 
     private final RestaurantRepository restaurantRepository;
+    private final ReviewRepository reviewRepository;
+    private final FollowRepository followRepository;
+    private final UserRepository userRepository;
 
     public RestaurantDto.Response getRestaurant(Long restaurantId) {
         Restaurant restaurant = findRestaurantById(restaurantId);
@@ -101,6 +110,11 @@ public class RestaurantService {
 
     @Transactional
     public RestaurantDto.Response createRestaurant(RestaurantDto.CreateRequest request) {
+        return createRestaurant(request, null);
+    }
+
+    @Transactional
+    public RestaurantDto.Response createRestaurant(RestaurantDto.CreateRequest request, Long userId) {
         // 카카오 Place ID가 있으면 중복 체크
         if (request.getKakaoPlaceId() != null) {
             var existing = restaurantRepository.findByKakaoPlaceId(request.getKakaoPlaceId());
@@ -110,7 +124,22 @@ public class RestaurantService {
             }
         }
 
+        // 수동 등록 시 간판 사진 필수 체크
+        boolean isManualRegistration = Boolean.TRUE.equals(request.getIsManualRegistration());
+        if (isManualRegistration) {
+            if (request.getSignboardImageUrl() == null || request.getSignboardImageUrl().isBlank()) {
+                throw new CustomException("수동 등록 시 간판 사진은 필수입니다", HttpStatus.BAD_REQUEST, "SIGNBOARD_IMAGE_REQUIRED");
+            }
+        }
+
         Restaurant.Category category = Restaurant.Category.valueOf(request.getCategory());
+
+        // 등록자 조회 (수동 등록 시)
+        User registeredBy = null;
+        if (isManualRegistration && userId != null) {
+            registeredBy = userRepository.findById(userId)
+                    .orElseThrow(() -> new CustomException("사용자를 찾을 수 없습니다", HttpStatus.NOT_FOUND, "USER_NOT_FOUND"));
+        }
 
         Restaurant restaurant = Restaurant.builder()
                 .name(request.getName())
@@ -126,6 +155,11 @@ public class RestaurantService {
                 .kakaoPlaceId(request.getKakaoPlaceId())
                 .latitude(request.getLatitude())
                 .longitude(request.getLongitude())
+                // 수동 등록 관련 필드
+                .isManualRegistration(isManualRegistration)
+                .signboardImageUrl(request.getSignboardImageUrl())
+                .approvalStatus(isManualRegistration ? RestaurantApprovalStatus.PENDING : RestaurantApprovalStatus.APPROVED)
+                .registeredBy(registeredBy)
                 .build();
 
         Restaurant saved = restaurantRepository.save(restaurant);
@@ -147,5 +181,18 @@ public class RestaurantService {
     public Restaurant findRestaurantByUuid(String uuid) {
         return restaurantRepository.findByUuid(uuid)
                 .orElseThrow(() -> new CustomException("음식점을 찾을 수 없습니다", HttpStatus.NOT_FOUND, "RESTAURANT_NOT_FOUND"));
+    }
+
+    // 팔로잉 사용자들이 리뷰한 음식점의 kakaoPlaceId 목록 조회
+    public List<String> getFollowingReviewedKakaoPlaceIds(Long userId) {
+        // 팔로잉 사용자 ID 목록 조회
+        List<Long> followingIds = followRepository.findFollowingIdsByFollowerId(userId);
+
+        if (followingIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 팔로잉 사용자들이 리뷰한 음식점의 kakaoPlaceId 목록 조회
+        return reviewRepository.findKakaoPlaceIdsByUserIds(followingIds);
     }
 }

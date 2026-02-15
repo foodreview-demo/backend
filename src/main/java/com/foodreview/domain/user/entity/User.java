@@ -142,11 +142,11 @@ public class User extends BaseTimeEntity {
 
     // 맛잘알 등급 계산
     public String getTasteGrade() {
-        if (tasteScore >= 2000) return "마스터";
-        if (tasteScore >= 1500) return "전문가";
-        if (tasteScore >= 1000) return "미식가";
-        if (tasteScore >= 500) return "탐험가";
-        return "입문자";
+        if (tasteScore >= 2000) return "다이아몬드";
+        if (tasteScore >= 1500) return "플래티넘";
+        if (tasteScore >= 1000) return "골드";
+        if (tasteScore >= 500) return "실버";
+        return "브론즈";
     }
 
     // 알림 설정 업데이트

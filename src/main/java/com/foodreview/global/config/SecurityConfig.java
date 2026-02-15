@@ -45,6 +45,8 @@ public class SecurityConfig {
                         // Public endpoints
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        // 인증 필요한 음식점 엔드포인트 (permitAll 전에 선언)
+                        .requestMatchers(HttpMethod.GET, "/api/restaurants/following-reviewed").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/restaurants/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/comments/**").permitAll()

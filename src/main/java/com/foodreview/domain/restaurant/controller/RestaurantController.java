@@ -16,6 +16,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+
+import java.util.List;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -111,5 +113,13 @@ public class RestaurantController {
             @PathVariable String kakaoPlaceId) {
         RestaurantDto.Response response = restaurantService.getRestaurantByKakaoPlaceId(kakaoPlaceId);
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(summary = "팔로잉 사용자들이 리뷰한 음식점의 kakaoPlaceId 목록 조회")
+    @GetMapping("/following-reviewed")
+    public ResponseEntity<ApiResponse<List<String>>> getFollowingReviewedKakaoPlaceIds(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        List<String> kakaoPlaceIds = restaurantService.getFollowingReviewedKakaoPlaceIds(userDetails.getUserId());
+        return ResponseEntity.ok(ApiResponse.success(kakaoPlaceIds));
     }
 }

@@ -4,6 +4,7 @@ import com.foodreview.domain.badge.service.BadgeService;
 import com.foodreview.domain.notification.entity.Notification;
 import com.foodreview.domain.notification.service.NotificationService;
 import com.foodreview.domain.restaurant.entity.Restaurant;
+import com.foodreview.domain.restaurant.entity.RestaurantApprovalStatus;
 import com.foodreview.domain.restaurant.repository.RestaurantRepository;
 import com.foodreview.domain.review.dto.ReviewDto;
 import com.foodreview.domain.review.entity.ReceiptVerificationStatus;
@@ -163,7 +164,7 @@ public class ReviewService {
 
         Set<Long> sympathizedReviewIds = getSympathizedReviewIds(currentUserId);
         Set<Long> blockedUserIds = getBlockedUserIds(currentUserId);
-        List<ReviewDto.Response> content = convertToResponseDtos(reviews.getContent(), sympathizedReviewIds, blockedUserIds);
+        List<ReviewDto.Response> content = convertToResponseDtos(reviews.getContent(), sympathizedReviewIds, blockedUserIds, currentUserId);
 
         return PageResponse.from(reviews, content);
     }
@@ -573,6 +574,11 @@ public class ReviewService {
 
     // 리뷰 목록을 DTO로 변환 (배치 쿼리로 N+1 방지)
     private List<ReviewDto.Response> convertToResponseDtos(List<Review> reviews, Set<Long> sympathizedReviewIds, Set<Long> blockedUserIds) {
+        return convertToResponseDtos(reviews, sympathizedReviewIds, blockedUserIds, null);
+    }
+
+    // 리뷰 목록을 DTO로 변환 (미승인 음식점 필터링 포함)
+    private List<ReviewDto.Response> convertToResponseDtos(List<Review> reviews, Set<Long> sympathizedReviewIds, Set<Long> blockedUserIds, Long currentUserId) {
         if (reviews.isEmpty()) {
             return List.of();
         }
@@ -594,6 +600,22 @@ public class ReviewService {
 
         return reviews.stream()
                 .filter(review -> !blockedUserIds.contains(review.getUser().getId()))
+                // 미승인 음식점 리뷰 필터링 (본인이 등록한 음식점은 제외)
+                .filter(review -> {
+                    Restaurant restaurant = review.getRestaurant();
+                    RestaurantApprovalStatus status = restaurant.getApprovalStatus();
+                    // 승인된 음식점이면 통과
+                    if (status == null || status == RestaurantApprovalStatus.APPROVED) {
+                        return true;
+                    }
+                    // 미승인 음식점이지만 본인이 등록한 경우 통과
+                    if (currentUserId != null && restaurant.getRegisteredBy() != null
+                            && restaurant.getRegisteredBy().getId().equals(currentUserId)) {
+                        return true;
+                    }
+                    // 미승인 음식점이고 본인이 등록하지 않은 경우 필터링
+                    return false;
+                })
                 .map(review -> {
                     ReviewDto.ReferenceInfo referenceInfo = null;
                     ReviewReference reference = referenceMap.get(review.getId());

@@ -81,3 +81,7 @@ cors:
 # Firebase Configuration
 firebase:
   config-path: ${FIREBASE_CONFIG_PATH:firebase-service-account.json}
+
+# 포트원 V2 결제 Configuration
+portone:
+  secret-key: ${PORTONE_SECRET_KEY:}

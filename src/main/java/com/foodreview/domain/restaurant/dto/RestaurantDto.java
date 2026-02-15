@@ -1,6 +1,7 @@
 package com.foodreview.domain.restaurant.dto;
 
 import com.foodreview.domain.restaurant.entity.Restaurant;
+import com.foodreview.domain.restaurant.entity.RestaurantApprovalStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -36,6 +37,11 @@ public class RestaurantDto {
         private String kakaoPlaceId;
         private Double latitude;
         private Double longitude;
+        // 수동 등록 관련 필드
+        private Boolean isManualRegistration;
+        private String signboardImageUrl;
+        private RestaurantApprovalStatus approvalStatus;
+        private String approvalStatusDisplay;
 
         public static Response from(Restaurant restaurant) {
             return Response.builder()
@@ -62,6 +68,10 @@ public class RestaurantDto {
                     .kakaoPlaceId(restaurant.getKakaoPlaceId())
                     .latitude(restaurant.getLatitude())
                     .longitude(restaurant.getLongitude())
+                    .isManualRegistration(restaurant.getIsManualRegistration())
+                    .signboardImageUrl(restaurant.getSignboardImageUrl())
+                    .approvalStatus(restaurant.getApprovalStatus())
+                    .approvalStatusDisplay(restaurant.getApprovalStatus() != null ? restaurant.getApprovalStatus().getDisplayName() : null)
                     .build();
         }
     }
@@ -129,5 +139,9 @@ public class RestaurantDto {
         private String kakaoPlaceId;
         private Double latitude;
         private Double longitude;
+
+        // 수동 등록 관련 필드
+        private Boolean isManualRegistration;
+        private String signboardImageUrl;
     }
 }
