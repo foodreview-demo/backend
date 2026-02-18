@@ -77,6 +77,7 @@ public class NotificationService {
             case SYMPATHY, COMMENT -> recipient.getNotifyReviews();
             case FOLLOW -> recipient.getNotifyFollows();
             case CHAT -> recipient.getNotifyMessages();
+            case GATHERING_REVIEWED, GATHERING_NEARBY, GATHERING_REMINDER -> recipient.getNotifyGatherings();
             default -> true;
         };
     }
@@ -98,6 +99,8 @@ public class NotificationService {
             case FOLLOW -> "새 팔로워";
             case CHAT -> "새 메시지";
             case REFERENCE -> "리뷰 참고";
+            case GATHERING_REVIEWED, GATHERING_NEARBY -> "새 번개모임";
+            case GATHERING_REMINDER -> "번개모임 알림";
             default -> "맛잘알";
         };
     }
@@ -114,6 +117,7 @@ public class NotificationService {
             }
             case FOLLOW -> "/profile/" + referenceId;
             case CHAT -> "/chat";
+            case GATHERING_REVIEWED, GATHERING_NEARBY, GATHERING_REMINDER -> "/search?tab=gathering";
             default -> "/";
         };
     }

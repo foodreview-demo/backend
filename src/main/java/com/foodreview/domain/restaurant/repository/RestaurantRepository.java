@@ -84,4 +84,12 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, Long> {
 
     // 평점순 정렬
     Page<Restaurant> findAllByOrderByAverageRatingDesc(Pageable pageable);
+
+    // AI 추천용: 지역별 음식점 (리뷰 1개 이상, 평점순)
+    @Query("SELECT r FROM Restaurant r WHERE r.region = :region AND r.reviewCount > 0 ORDER BY r.averageRating DESC")
+    List<Restaurant> findByRegionWithReviews(@Param("region") String region);
+
+    // AI 추천용: 지역+구 음식점 (리뷰 1개 이상, 평점순)
+    @Query("SELECT r FROM Restaurant r WHERE r.region = :region AND r.district = :district AND r.reviewCount > 0 ORDER BY r.averageRating DESC")
+    List<Restaurant> findByRegionAndDistrictWithReviews(@Param("region") String region, @Param("district") String district);
 }

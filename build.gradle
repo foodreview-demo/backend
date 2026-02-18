@@ -63,6 +63,9 @@ dependencies {
     // Firebase Admin SDK (FCM Push Notifications)
     implementation 'com.google.firebase:firebase-admin:9.2.0'
 
+    // Anthropic Claude API (AI 추천용)
+    implementation 'com.anthropic:anthropic-java:1.0.0'
+
     // 포트원 V2 REST API (WebClient 사용)
 
     // Test

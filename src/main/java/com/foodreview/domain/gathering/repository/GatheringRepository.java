@@ -77,4 +77,14 @@ public interface GatheringRepository extends JpaRepository<Gathering, Long> {
     // 통계: 오늘 생성된 모임 수
     @Query("SELECT COUNT(g) FROM Gathering g WHERE g.createdAt >= :startOfDay")
     long countCreatedToday(@Param("startOfDay") LocalDateTime startOfDay);
+
+    // 리마인더 알림 대상 모임 (1시간 전 ~ 현재 사이에 시작, 아직 리마인더 미발송)
+    @Query("SELECT g FROM Gathering g " +
+           "WHERE g.status IN :statuses " +
+           "AND g.targetTime BETWEEN :now AND :oneHourLater " +
+           "AND g.reminderSent = false")
+    List<Gathering> findGatheringsForReminder(
+            @Param("statuses") List<GatheringStatus> statuses,
+            @Param("now") LocalDateTime now,
+            @Param("oneHourLater") LocalDateTime oneHourLater);
 }

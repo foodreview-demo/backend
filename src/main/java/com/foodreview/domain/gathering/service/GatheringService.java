@@ -39,6 +39,7 @@ public class GatheringService {
     private final ChatRoomRepository chatRoomRepository;
     private final ChatRoomMemberRepository chatRoomMemberRepository;
     private final PortoneService portoneService;
+    private final GatheringNotificationService gatheringNotificationService;
 
     /**
      * 모임 생성
@@ -86,6 +87,9 @@ public class GatheringService {
                 .joinedAt(LocalDateTime.now())
                 .build();
         participantRepository.save(hostParticipant);
+
+        // 번개모임 알림 전송 (비동기)
+        gatheringNotificationService.sendGatheringCreatedNotifications(gathering, creator);
 
         return GatheringDto.Response.from(gathering, creator.getId());
     }

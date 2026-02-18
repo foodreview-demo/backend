@@ -85,3 +85,7 @@ firebase:
 # 포트원 V2 결제 Configuration
 portone:
   secret-key: ${PORTONE_SECRET_KEY:}
+
+# Anthropic Claude API Configuration (AI 추천용)
+anthropic:
+  api-key: ${ANTHROPIC_API_KEY:}

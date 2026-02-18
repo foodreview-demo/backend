@@ -84,6 +84,11 @@ public class Gathering extends BaseTimeEntity {
     @Column(name = "chat_room_uuid", length = 36)
     private String chatRoomUuid;
 
+    // 리마인더 알림 발송 여부
+    @Column(name = "reminder_sent", nullable = false)
+    @Builder.Default
+    private Boolean reminderSent = false;
+
     @OneToMany(mappedBy = "gathering", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<GatheringParticipant> participants = new ArrayList<>();
@@ -151,5 +156,9 @@ public class Gathering extends BaseTimeEntity {
 
     public boolean isAutoRefund() {
         return this.refundType == RefundType.AUTO;
+    }
+
+    public void markReminderSent() {
+        this.reminderSent = true;
     }
 }

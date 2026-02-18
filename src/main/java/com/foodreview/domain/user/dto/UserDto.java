@@ -206,6 +206,7 @@ public class UserDto {
         private Boolean follows;
         private Boolean messages;
         private Boolean marketing;
+        private Boolean gatherings;
 
         public static NotificationSettingsResponse from(User user) {
             return NotificationSettingsResponse.builder()
@@ -213,6 +214,7 @@ public class UserDto {
                     .follows(user.getNotifyFollows())
                     .messages(user.getNotifyMessages())
                     .marketing(user.getNotifyMarketing())
+                    .gatherings(user.getNotifyGatherings())
                     .build();
         }
     }
@@ -225,6 +227,7 @@ public class UserDto {
         private Boolean follows;
         private Boolean messages;
         private Boolean marketing;
+        private Boolean gatherings;
     }
 
     // 추천 점수 상세 (디버깅/Admin용)

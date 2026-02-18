@@ -133,4 +133,19 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     // 팔로잉 사용자들이 리뷰한 음식점의 kakaoPlaceId 목록 (중복 제거)
     @Query("SELECT DISTINCT r.restaurant.kakaoPlaceId FROM Review r WHERE r.user.id IN :userIds AND r.restaurant.kakaoPlaceId IS NOT NULL")
     List<String> findKakaoPlaceIdsByUserIds(@Param("userIds") List<Long> userIds);
+
+    // 특정 음식점에 리뷰를 남긴 사용자 ID 목록 (중복 제거)
+    @Query("SELECT DISTINCT r.user.id FROM Review r WHERE r.restaurant.id = :restaurantId")
+    List<Long> findReviewerIdsByRestaurantId(@Param("restaurantId") Long restaurantId);
+
+    // 취향 분석용 리뷰 데이터 조회 (배치용)
+    @Query("SELECT r.restaurant.id, r.restaurant.category, r.rating, r.createdAt, r.visitDate, r.content, r.priceRating " +
+           "FROM Review r " +
+           "WHERE r.user.id = :userId AND r.createdAt >= :since " +
+           "ORDER BY r.createdAt DESC")
+    List<Object[]> findReviewDataForTasteAnalysis(@Param("userId") Long userId, @Param("since") java.time.LocalDateTime since);
+
+    // 사용자별 전체 리뷰 조회 (취향 프로필 배치용)
+    @Query("SELECT r FROM Review r WHERE r.user.id = :userId ORDER BY r.createdAt DESC")
+    List<Review> findByUserIdOrderByCreatedAtDesc(@Param("userId") Long userId);
 }

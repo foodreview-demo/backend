@@ -88,6 +88,10 @@ public class User extends BaseTimeEntity {
     @Builder.Default
     private Boolean notifyMarketing = false;
 
+    @Column(name = "notify_gatherings", nullable = false)
+    @Builder.Default
+    private Boolean notifyGatherings = true;
+
     // 탈퇴 여부
     @Column(name = "deleted", nullable = false)
     @Builder.Default
@@ -151,11 +155,13 @@ public class User extends BaseTimeEntity {
 
     // 알림 설정 업데이트
     public void updateNotificationSettings(Boolean notifyReviews, Boolean notifyFollows,
-                                           Boolean notifyMessages, Boolean notifyMarketing) {
+                                           Boolean notifyMessages, Boolean notifyMarketing,
+                                           Boolean notifyGatherings) {
         if (notifyReviews != null) this.notifyReviews = notifyReviews;
         if (notifyFollows != null) this.notifyFollows = notifyFollows;
         if (notifyMessages != null) this.notifyMessages = notifyMessages;
         if (notifyMarketing != null) this.notifyMarketing = notifyMarketing;
+        if (notifyGatherings != null) this.notifyGatherings = notifyGatherings;
     }
 
     // 회원 탈퇴 처리 (소프트 삭제 + 개인정보 익명화)

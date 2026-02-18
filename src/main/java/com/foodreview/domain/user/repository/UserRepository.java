@@ -47,4 +47,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // 배치용: 단일 사용자 + favoriteCategories 조회
     @Query("SELECT u FROM User u LEFT JOIN FETCH u.favoriteCategories WHERE u.id = :userId")
     Optional<User> findByIdWithCategories(@Param("userId") Long userId);
+
+    // 같은 지역(region + district) 사용자 조회 (번개모임 알림용)
+    @Query("SELECT u FROM User u WHERE u.region = :region AND (:district IS NULL OR u.district = :district) AND u.deleted = false AND u.notifyGatherings = true")
+    List<User> findByRegionAndDistrict(@Param("region") String region, @Param("district") String district);
+
+    // 취향 분석 배치용: 최소 N개 이상 리뷰 작성한 사용자 조회
+    @Query("SELECT u FROM User u WHERE u.deleted = false AND u.reviewCount >= :minReviews")
+    List<User> findUsersWithMinReviews(@Param("minReviews") int minReviews);
 }

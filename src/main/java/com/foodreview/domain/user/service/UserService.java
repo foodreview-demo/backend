@@ -330,7 +330,8 @@ public class UserService {
                 request.getReviews(),
                 request.getFollows(),
                 request.getMessages(),
-                request.getMarketing()
+                request.getMarketing(),
+                request.getGatherings()
         );
         return UserDto.NotificationSettingsResponse.from(user);
     }
